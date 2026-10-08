@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Bread</title>
+<meta name="description" content="Robert Murray M'Cheyne's one-year Bible reading calendar, with the King James text, Matthew Henry's Concise Commentary, study questions and a private journal.">
+<meta name="theme-color" content="#ECEEE9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141917" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Instrument+Sans:wght@400;500;600&display=swap">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Daily Bread">
+<style>
+*{box-sizing:border-box}
+body{margin:0}
+img{max-width:100%}
+/* Layout: one-column reading app — a calendar strip on top, the day's four readings as stacked "leaves", a full-screen reader per reading, bottom tab bar. */
+:root{
+  --bg:#ECEEE9; --surface:#F8F9F6; --ink:#1C2321; --muted:#5E6863; --line:#D3D8D1;
+  --accent:#2D4A66; --accent-soft:#DCE4EC; --wine:#7B2E3B; --ok:#3F6B4E; --ok-soft:#DCE8DF;
+  --display:"Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --read:"Literata", "Iowan Old Style", Georgia, serif;
+  --ui:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fs-read:1.06rem;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141917; --surface:#1C2320; --ink:#E4E7E1; --muted:#9AA49E; --line:#2E3733;
+  --accent:#9DB8D3; --accent-soft:#24313D; --wine:#D58C98; --ok:#8CC09D; --ok-soft:#1F3027; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#141917; --surface:#1C2320; --ink:#E4E7E1; --muted:#9AA49E; --line:#2E3733;
+  --accent:#9DB8D3; --accent-soft:#24313D; --wine:#D58C98; --ok:#8CC09D; --ok-soft:#1F3027; color-scheme:dark }
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:15px;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.app{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:12px 96px}
+.eyebrow{font:600 .72rem/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{text-wrap:balance;margin:0}
+[hidden]{display:none!important}
+
+/* Today header */
+.dayhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:8px 14px;border-bottom:1px solid var(--line)}
+.dayhead h1{font:500 3rem/0.9 var(--display);letter-spacing:-.01em}
+.dayhead h1 span{font-style:italic;color:var(--muted);font-size:1.6rem;margin-right:.25em}
+.dayhead .date{font:500 .95rem var(--ui);color:var(--muted);margin-top:6px}
+.navbtns{display:flex;gap:6px}
+.navbtns button{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;background:var(--surface)}
+.stats{display:flex;gap:18px;flex-wrap:wrap;padding-block:12px;font-variant-numeric:tabular-nums}
+.stat b{display:block;font:600 1.15rem var(--ui)}
+.stat span{font-size:.78rem;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+.banner{background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:12px 14px;margin-block:10px;font-size:.92rem;line-height:1.45;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.banner button{font-weight:600;color:var(--accent);padding:4px 0}
+
+/* Readings */
+.group{margin-top:18px}
+.group .eyebrow{display:flex;justify-content:space-between;margin-bottom:8px}
+.leaf{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:8px;width:100%;text-align:left}
+.leaf .ref{flex:1;min-width:0}
+.leaf .ref b{display:block;font:600 1.22rem/1.2 var(--read)}
+.leaf .ref small{color:var(--muted);font-size:.8rem}
+.check{width:30px;height:30px;flex:none;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;background:var(--bg)}
+.check svg{opacity:0}
+.leaf.done .check{background:var(--ok);border-color:var(--ok)}
+.leaf.done .check svg{opacity:1}
+.leaf.done .ref b{color:var(--muted)}
+.chev{color:var(--muted)}
+.prayer{margin-top:22px}
+.prayer label{display:block;margin-bottom:8px}
+textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:12px;font:400 .98rem/1.5 var(--read)}
+.saved{font-size:.75rem;color:var(--muted);height:1em;margin-top:4px}
+
+/* Reader */
+.reader{position:fixed;inset:0;background:var(--bg);z-index:20;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.rtop{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.rtop .row{max-width:640px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.rtop .row h2{flex:1;min-width:0;font:600 1.05rem var(--read);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{height:36px;min-width:36px;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:.85rem}
+.tabs{max-width:640px;margin:0 auto;padding:0 16px 10px;display:flex;gap:6px}
+.tabs button{flex:1;padding:8px 0;border-radius:8px;font-weight:600;font-size:.88rem;color:var(--muted);border:1px solid transparent}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.rbody{max-width:640px;margin:0 auto;padding:18px 16px calc(120px + env(safe-area-inset-bottom,0px))}
+.scripture{font:400 var(--fs-read)/1.75 var(--read);max-width:65ch}
+.scripture h3{font:500 1.7rem var(--display);margin:6px 0 10px}
+.scripture h3:not(:first-child){margin-top:28px}
+.scripture p{margin:0 0 .2em}
+.scripture sup{font:600 .62em var(--ui);color:var(--wine);margin-right:.25em;vertical-align:.45em}
+.comm{font:400 calc(var(--fs-read) - .06rem)/1.7 var(--read);max-width:65ch}
+.comm h4{font:600 .72rem var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:24px 0 6px}
+.comm b{display:block;font:600 .95rem var(--ui);color:var(--wine);margin:22px 0 4px}
+.comm p{margin:0 0 .8em}
+.comm .outline{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:6px 0 10px;font-family:var(--ui);font-size:.9rem;line-height:1.5}
+.comm .outline div{padding:3px 0}
+.note{color:var(--muted);font-style:italic}
+.study ol{padding-left:1.2em;margin:0 0 18px;line-height:1.5}
+.study li{margin-bottom:10px}
+.study li strong{display:block;font:600 .72rem var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--wine);margin-bottom:2px}
+.rfoot{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:3}
+.rfoot .in{max-width:640px;margin:0 auto;display:flex;gap:8px}
+.primary{flex:1;background:var(--accent);color:var(--bg);border-radius:10px;padding:13px;font-weight:600}
+.primary.isdone{background:var(--ok-soft);color:var(--ok)}
+.secondary{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:13px 16px;font-weight:600}
+
+/* Calendar */
+.pagehead{padding-block:8px 14px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.pagehead h1{font:500 2.4rem/1 var(--display)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin:10px 0 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.month{margin-top:18px}
+.month h3{font:600 .8rem var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cell{aspect-ratio:1;max-width:100%;border-radius:7px;background:var(--surface);border:1px solid var(--line);font:500 .78rem var(--ui);font-variant-numeric:tabular-nums;display:grid;place-items:center;color:var(--muted)}
+.cell.done{background:var(--ok);border-color:var(--ok);color:var(--bg)}
+.cell.part{background:var(--ok-soft);border-color:var(--ok);color:var(--ink)}
+.cell.miss{border-color:var(--wine);color:var(--wine)}
+.cell.today{outline:2px solid var(--accent);outline-offset:1px;color:var(--ink);font-weight:700}
+.cell.pad{visibility:hidden}
+.cell.skip{background:transparent;border-style:dashed;opacity:.6}
+
+/* Journal */
+.jentry{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;width:100%;text-align:left}
+.jentry .eyebrow{margin-bottom:6px}
+.jentry p{margin:0;font:400 .95rem/1.5 var(--read);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.empty{color:var(--muted);line-height:1.6;padding:20px 0}
+
+/* About */
+.prose{font:400 1rem/1.65 var(--read);max-width:65ch}
+.prose h2{font:500 1.6rem var(--display);margin:26px 0 6px}
+.prose p{margin:0 0 .9em}
+.prose ol{padding-left:1.2em}
+.small{font-size:.85rem;color:var(--muted)}
+
+/* More panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.panel h2{font:500 1.5rem var(--display)}
+.panel p{margin:0;line-height:1.5}
+.formrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.formrow input{width:7em;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:500 1rem var(--ui);font-variant-numeric:tabular-nums}
+.panelactions{display:flex;gap:8px;flex-wrap:wrap}
+.panelactions .primary{flex:1;min-width:140px}
+.filebtn{display:inline-flex;align-items:center;cursor:pointer}
+.startpreview{background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:12px 14px;line-height:1.45}
+.panel textarea{min-height:80px;font:400 .8rem/1.4 ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.bad{color:var(--wine)}
+
+/* Tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:10}
+.tabbar .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{padding:10px 0 9px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.7rem;font-weight:600;color:var(--muted)}
+.tabbar button[aria-current="page"]{color:var(--accent)}
+.tabbar svg{width:22px;height:22px}
+@media (prefers-reduced-motion:no-preference){.leaf,.check{transition:background .2s,border-color .2s}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- TODAY -->
+  <section class="view" id="v-today">
+    <header class="dayhead">
+      <div>
+        <div class="eyebrow">M'Cheyne Calendar</div>
+        <h1 id="dayTitle"><span>Day</span>1</h1>
+        <div class="date" id="dayDate"></div>
+      </div>
+      <div class="navbtns">
+        <button id="prevDay" aria-label="Previous day"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button id="nextDay" aria-label="Next day"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </header>
+    <div class="stats">
+      <div class="stat"><b id="stDone">0</b><span>days complete</span></div>
+      <div class="stat"><b id="stStreak">0</b><span>day streak</span></div>
+      <div class="stat"><b id="stChap">0</b><span>readings done</span></div>
+    </div>
+    <div class="bar"><i id="yearBar"></i></div>
+    <div class="small" id="yearText"></div>
+    <div id="banners"></div>
+    <div id="readings"></div>
+    <div class="prayer">
+      <label class="eyebrow" for="prayerBox">Prayer for today</label>
+      <textarea id="prayerBox" placeholder="Turn what you read into prayer. One verse is enough to start."></textarea>
+      <div class="saved" id="prayerSaved"></div>
+    </div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="view" id="v-cal" hidden>
+    <header class="pagehead"><div class="eyebrow">365 days · whole Bible</div><h1>Calendar</h1></header>
+    <div class="banner" id="calSummary"></div>
+    <div id="calCatch"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--ok)"></i>Complete</span>
+      <span><i class="sw" style="background:var(--ok-soft);border:1px solid var(--ok)"></i>Started</span>
+      <span><i class="sw" style="border:1px solid var(--wine)"></i>Missed</span>
+      <span><i class="sw" style="border:1px dashed var(--muted)"></i>Skipped</span>
+    </div>
+    <div id="months"></div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section class="view" id="v-journal" hidden>
+    <header class="pagehead"><div class="eyebrow">Your notes and prayers</div><h1>Journal</h1></header>
+    <div id="jlist"></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="view" id="v-about" hidden>
+    <header class="pagehead"><div class="eyebrow">Your plan, backups and how it works</div><h1>More</h1></header>
+
+    <section class="panel" aria-labelledby="h-start">
+      <h2 id="h-start">Start from a day</h2>
+      <p class="small">Make any day today's reading. Unfinished days you jump past are marked skipped. You can still read them from the Calendar.</p>
+      <div class="formrow">
+        <label for="startInput" class="eyebrow">Day</label>
+        <input id="startInput" type="number" inputmode="numeric" min="1" max="365" placeholder="1–365">
+        <button class="secondary" id="startGo">Preview</button>
+      </div>
+      <div class="startpreview small" id="startPreview" hidden></div>
+      <div class="panelactions" id="startActions" hidden>
+        <button class="secondary" id="startCancel">Cancel</button>
+        <button class="primary" id="startConfirm">Start from this day</button>
+      </div>
+    </section>
+
+    <section class="panel" id="backup" aria-labelledby="h-backup">
+      <h2 id="h-backup">Back up</h2>
+      <p class="small" id="backupWhen"></p>
+      <p class="small">A backup holds your ticks, notes, prayers and plan dates. <strong>Save or send file</strong> lets you email it, send it on WhatsApp or save it to Files. <strong>Copy backup</strong> copies it as text to paste anywhere.</p>
+      <div class="panelactions">
+        <button class="secondary" id="bkFile">Save or send file</button>
+        <button class="primary" id="bkCopy">Copy backup</button>
+      </div>
+      <div class="small" id="bkMsg" role="status"></div>
+      <textarea id="bkText" readonly hidden aria-label="Backup text"></textarea>
+    </section>
+
+    <section class="panel" aria-labelledby="h-restore">
+      <h2 id="h-restore">Restore</h2>
+      <p class="small">Paste a backup you copied, or choose a backup file. Restoring adds to what is already here. Nothing you have is deleted.</p>
+      <textarea id="rsText" placeholder="Paste backup text here" aria-label="Paste backup text"></textarea>
+      <div class="panelactions">
+        <label class="secondary filebtn" for="rsFile">Choose file</label>
+        <input id="rsFile" type="file" accept=".json,.txt,application/json,text/plain" hidden>
+        <button class="primary" id="rsCheck">Check backup</button>
+      </div>
+      <div class="small" id="rsMsg" role="status"></div>
+      <div class="panelactions" id="rsActions" hidden>
+        <button class="secondary" id="rsCancel">Cancel</button>
+        <button class="primary" id="rsGo">Restore</button>
+      </div>
+    </section>
+
+    <div class="prose">
+      <h2>About the plan</h2>
+      <p>Robert Murray M'Cheyne, a minister in Dundee, drew up this calendar in 1842 for his congregation. Each day has four chapters from different parts of the Bible. Over 365 days you read the Old Testament once and the New Testament and Psalms twice.</p>
+      <p>He marked the first two readings for <strong>Family</strong> worship, read together at home, and the last two as <strong>Secret</strong>, read alone with God. Reading four streams side by side lets one part of Scripture shed light on another.</p>
+      <h2>A way to study each reading</h2>
+      <ol>
+        <li>Pray briefly before you start. Ask God to open your eyes to what is there.</li>
+        <li>Read the passage slowly, all the way through.</li>
+        <li>Open the commentary. Matthew Henry's notes follow the passage section by section.</li>
+        <li>Answer the study questions in the journal box for that reading. Writing slows you down and makes you think.</li>
+        <li>Finish by writing a short prayer from what you read.</li>
+      </ol>
+      <p>If you miss a day, don't try to read three days at once to catch up. M'Cheyne himself warned against reading becoming a burden.</p>
+      <h2>Catch me up</h2>
+      <p>When you fall behind, a <strong>Catch me up</strong> button appears on Today and in the Calendar. It makes your first unfinished day today's reading and moves every later day back by the same number of days. Nothing is skipped: you still read all 365 days in order, and the plan finishes later. Your ticks and notes stay with their readings, and your streak starts again from that day.</p>
+      <p id="shiftNote" class="small"></p>
+      <h2>Sources</h2>
+      <p>Reading plan: Robert Murray M'Cheyne, <em>Calendar for Daily Readings</em> (1842). Scripture: King James Version. Commentary: Matthew Henry's <em>Concise Commentary on the Whole Bible</em> (public domain). This edition of the commentary has no notes on Leviticus 19 or Psalm 108.</p>
+      <h2>Put it on your Home Screen</h2>
+      <p><strong>iPhone:</strong> open this page in Safari, tap the Share button, then <em>Add to Home Screen</em>.<br><strong>Android:</strong> open it in Chrome, tap the ⋮ menu, then <em>Add to Home screen</em> or <em>Install app</em>.</p>
+      <p>Once installed it opens full screen like an app. Days you have opened are kept on the phone, so you can read them without a connection.</p>
+      <h2>Where your progress is kept</h2>
+      <p id="storeNote" class="small">Checking…</p>
+    </div>
+  </section>
+</div>
+
+<!-- READER -->
+<div class="reader" id="reader" hidden>
+  <div class="rtop">
+    <div class="row">
+      <button class="iconbtn" id="rClose" aria-label="Back to today"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <h2 id="rTitle"></h2>
+      <button class="iconbtn" id="fsDown" aria-label="Smaller text">A−</button>
+      <button class="iconbtn" id="fsUp" aria-label="Larger text">A+</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="t-text" aria-selected="true">Scripture</button>
+      <button role="tab" id="t-comm" aria-selected="false">Commentary</button>
+      <button role="tab" id="t-study" aria-selected="false">Study</button>
+    </div>
+  </div>
+  <div class="rbody" id="rBody"></div>
+  <div class="rfoot"><div class="in">
+    <button class="primary" id="rDone">Mark as read</button>
+    <button class="secondary" id="rNext">Next</button>
+  </div></div>
+</div>
+
+<nav class="tabbar"><div class="in">
+  <button data-view="today" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5c-.8 0-1.5-.7-1.5-1.5v-13ZM13 4h5.5c.8 0 1.5.7 1.5 1.5v13c0 .8-.7 1.5-1.5 1.5H13V4Z"/></svg>Today</button>
+  <button data-view="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Calendar</button>
+  <button data-view="journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 3.5h10.5L19 6v14.5H6z"/><path d="M9 9h7M9 12.5h7M9 16h4"/></svg>Journal</button>
+  <button data-view="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>More</button>
+</div></nav>
+
+<script>
+const INDEX = [["Genesis 1","Matthew 1","Ezra 1","Acts 1"],["Genesis 2","Matthew 2","Ezra 2","Acts 2"],["Genesis 3","Matthew 3","Ezra 3","Acts 3"],["Genesis 4","Matthew 4","Ezra 4","Acts 4"],["Genesis 5","Matthew 5","Ezra 5","Acts 5"],["Genesis 6","Matthew 6","Ezra 6","Acts 6"],["Genesis 7","Matthew 7","Ezra 7","Acts 7"],["Genesis 8","Matthew 8","Ezra 8","Acts 8"],["Genesis 9–10","Matthew 9","Ezra 9","Acts 9"],["Genesis 11","Matthew 10","Ezra 10","Acts 10"],["Genesis 12","Matthew 11","Nehemiah 1","Acts 11"],["Genesis 13","Matthew 12","Nehemiah 2","Acts 12"],["Genesis 14","Matthew 13","Nehemiah 3","Acts 13"],["Genesis 15","Matthew 14","Nehemiah 4","Acts 14"],["Genesis 16","Matthew 15","Nehemiah 5","Acts 15"],["Genesis 17","Matthew 16","Nehemiah 6","Acts 16"],["Genesis 18","Matthew 17","Nehemiah 7","Acts 17"],["Genesis 19","Matthew 18","Nehemiah 8","Acts 18"],["Genesis 20","Matthew 19","Nehemiah 9","Acts 19"],["Genesis 21","Matthew 20","Nehemiah 10","Acts 20"],["Genesis 22","Matthew 21","Nehemiah 11","Acts 21"],["Genesis 23","Matthew 22","Nehemiah 12","Acts 22"],["Genesis 24","Matthew 23","Nehemiah 13","Acts 23"],["Genesis 25","Matthew 24","Esther 1","Acts 24"],["Genesis 26","Matthew 25","Esther 2","Acts 25"],["Genesis 27","Matthew 26","Esther 3","Acts 26"],["Genesis 28","Matthew 27","Esther 4","Acts 27"],["Genesis 29","Matthew 28","Esther 5","Acts 28"],["Genesis 30","Mark 1","Esther 6","Romans 1"],["Genesis 31","Mark 2","Esther 7","Romans 2"],["Genesis 32","Mark 3","Esther 8","Romans 3"],["Genesis 33","Mark 4","Esther 9–10","Romans 4"],["Genesis 34","Mark 5","Job 1","Romans 5"],["Genesis 35–36","Mark 6","Job 2","Romans 6"],["Genesis 37","Mark 7","Job 3","Romans 7"],["Genesis 38","Mark 8","Job 4","Romans 8"],["Genesis 39","Mark 9","Job 5","Romans 9"],["Genesis 40","Mark 10","Job 6","Romans 10"],["Genesis 41","Mark 11","Job 7","Romans 11"],["Genesis 42","Mark 12","Job 8","Romans 12"],["Genesis 43","Mark 13","Job 9","Romans 13"],["Genesis 44","Mark 14","Job 10","Romans 14"],["Genesis 45","Mark 15","Job 11","Romans 15"],["Genesis 46","Mark 16","Job 12","Romans 16"],["Genesis 47","Luke 1:1–38","Job 13","1 Corinthians 1"],["Genesis 48","Luke 1:39–80","Job 14","1 Corinthians 2"],["Genesis 49","Luke 2","Job 15","1 Corinthians 3"],["Genesis 50","Luke 3","Job 16–17","1 Corinthians 4"],["Exodus 1","Luke 4","Job 18","1 Corinthians 5"],["Exodus 2","Luke 5","Job 19","1 Corinthians 6"],["Exodus 3","Luke 6","Job 20","1 Corinthians 7"],["Exodus 4","Luke 7","Job 21","1 Corinthians 8"],["Exodus 5","Luke 8","Job 22","1 Corinthians 9"],["Exodus 6","Luke 9","Job 23","1 Corinthians 10"],["Exodus 7","Luke 10","Job 24","1 Corinthians 11"],["Exodus 8","Luke 11","Job 25–26","1 Corinthians 12"],["Exodus 9","Luke 12","Job 27","1 Corinthians 13"],["Exodus 10","Luke 13","Job 28","1 Corinthians 14"],["Exodus 11–12:21","Luke 14","Job 29","1 Corinthians 15"],["Exodus 12:22–51","Luke 15","Job 30","1 Corinthians 16"],["Exodus 13","Luke 16","Job 31","2 Corinthians 1"],["Exodus 14","Luke 17","Job 32","2 Corinthians 2"],["Exodus 15","Luke 18","Job 33","2 Corinthians 3"],["Exodus 16","Luke 19","Job 34","2 Corinthians 4"],["Exodus 17","Luke 20","Job 35","2 Corinthians 5"],["Exodus 18","Luke 21","Job 36","2 Corinthians 6"],["Exodus 19","Luke 22","Job 37","2 Corinthians 7"],["Exodus 20","Luke 23","Job 38","2 Corinthians 8"],["Exodus 21","Luke 24","Job 39","2 Corinthians 9"],["Exodus 22","John 1","Job 40","2 Corinthians 10"],["Exodus 23","John 2","Job 41","2 Corinthians 11"],["Exodus 24","John 3","Job 42","2 Corinthians 12"],["Exodus 25","John 4","Proverbs 1","2 Corinthians 13"],["Exodus 26","John 5","Proverbs 2","Galatians 1"],["Exodus 27","John 6","Proverbs 3","Galatians 2"],["Exodus 28","John 7","Proverbs 4","Galatians 3"],["Exodus 29","John 8","Proverbs 5","Galatians 4"],["Exodus 30","John 9","Proverbs 6","Galatians 5"],["Exodus 31","John 10","Proverbs 7","Galatians 6"],["Exodus 32","John 11","Proverbs 8","Ephesians 1"],["Exodus 33","John 12","Proverbs 9","Ephesians 2"],["Exodus 34","John 13","Proverbs 10","Ephesians 3"],["Exodus 35","John 14","Proverbs 11","Ephesians 4"],["Exodus 36","John 15","Proverbs 12","Ephesians 5"],["Exodus 37","John 16","Proverbs 13","Ephesians 6"],["Exodus 38","John 17","Proverbs 14","Philippians 1"],["Exodus 39","John 18","Proverbs 15","Philippians 2"],["Exodus 40","John 19","Proverbs 16","Philippians 3"],["Leviticus 1","John 20","Proverbs 17","Philippians 4"],["Leviticus 2–3","John 21","Proverbs 18","Colossians 1"],["Leviticus 4","Psalms 1–2","Proverbs 19","Colossians 2"],["Leviticus 5","Psalms 3–4","Proverbs 20","Colossians 3"],["Leviticus 6","Psalms 5–6","Proverbs 21","Colossians 4"],["Leviticus 7","Psalms 7–8","Proverbs 22","1 Thessalonians 1"],["Leviticus 8","Psalm 9","Proverbs 23","1 Thessalonians 2"],["Leviticus 9","Psalm 10","Proverbs 24","1 Thessalonians 3"],["Leviticus 10","Psalms 11–12","Proverbs 25","1 Thessalonians 4"],["Leviticus 11–12","Psalms 13–14","Proverbs 26","1 Thessalonians 5"],["Leviticus 13","Psalms 15–16","Proverbs 27","2 Thessalonians 1"],["Leviticus 14","Psalm 17","Proverbs 28","2 Thessalonians 2"],["Leviticus 15","Psalm 18","Proverbs 29","2 Thessalonians 3"],["Leviticus 16","Psalm 19","Proverbs 30","1 Timothy 1"],["Leviticus 17","Psalms 20–21","Proverbs 31","1 Timothy 2"],["Leviticus 18","Psalm 22","Ecclesiastes 1","1 Timothy 3"],["Leviticus 19","Psalms 23–24","Ecclesiastes 2","1 Timothy 4"],["Leviticus 20","Psalm 25","Ecclesiastes 3","1 Timothy 5"],["Leviticus 21","Psalms 26–27","Ecclesiastes 4","1 Timothy 6"],["Leviticus 22","Psalms 28–29","Ecclesiastes 5","2 Timothy 1"],["Leviticus 23","Psalm 30","Ecclesiastes 6","2 Timothy 2"],["Leviticus 24","Psalm 31","Ecclesiastes 7","2 Timothy 3"],["Leviticus 25","Psalm 32","Ecclesiastes 8","2 Timothy 4"],["Leviticus 26","Psalm 33","Ecclesiastes 9","Titus 1"],["Leviticus 27","Psalm 34","Ecclesiastes 10","Titus 2"],["Numbers 1","Psalm 35","Ecclesiastes 11","Titus 3"],["Numbers 2","Psalm 36","Ecclesiastes 12","Philemon 1"],["Numbers 3","Psalm 37","Song of Solomon 1","Hebrews 1"],["Numbers 4","Psalm 38","Song of Solomon 2","Hebrews 2"],["Numbers 5","Psalm 39","Song of Solomon 3","Hebrews 3"],["Numbers 6","Psalms 40–41","Song of Solomon 4","Hebrews 4"],["Numbers 7","Psalms 42–43","Song of Solomon 5","Hebrews 5"],["Numbers 8","Psalm 44","Song of Solomon 6","Hebrews 6"],["Numbers 9","Psalm 45","Song of Solomon 7","Hebrews 7"],["Numbers 10","Psalms 46–47","Song of Solomon 8","Hebrews 8"],["Numbers 11","Psalm 48","Isaiah 1","Hebrews 9"],["Numbers 12–13","Psalm 49","Isaiah 2","Hebrews 10"],["Numbers 14","Psalm 50","Isaiah 3–4","Hebrews 11"],["Numbers 15","Psalm 51","Isaiah 5","Hebrews 12"],["Numbers 16","Psalms 52–54","Isaiah 6","Hebrews 13"],["Numbers 17–18","Psalm 55","Isaiah 7","James 1"],["Numbers 19","Psalms 56–57","Isaiah 8–9:7","James 2"],["Numbers 20","Psalms 58–59","Isaiah 9:8–10:4","James 3"],["Numbers 21","Psalms 60–61","Isaiah 10:5–34","James 4"],["Numbers 22","Psalms 62–63","Isaiah 11–12","James 5"],["Numbers 23","Psalms 64–65","Isaiah 13","1 Peter 1"],["Numbers 24","Psalms 66–67","Isaiah 14","1 Peter 2"],["Numbers 25","Psalm 68","Isaiah 15","1 Peter 3"],["Numbers 26","Psalm 69","Isaiah 16","1 Peter 4"],["Numbers 27","Psalms 70–71","Isaiah 17–18","1 Peter 5"],["Numbers 28","Psalm 72","Isaiah 19–20","2 Peter 1"],["Numbers 29","Psalm 73","Isaiah 21","2 Peter 2"],["Numbers 30","Psalm 74","Isaiah 22","2 Peter 3"],["Numbers 31","Psalms 75–76","Isaiah 23","1 John 1"],["Numbers 32","Psalm 77","Isaiah 24","1 John 2"],["Numbers 33","Psalm 78:1–37","Isaiah 25","1 John 3"],["Numbers 34","Psalm 78:38–72","Isaiah 26","1 John 4"],["Numbers 35","Psalm 79","Isaiah 27","1 John 5"],["Numbers 36","Psalm 80","Isaiah 28","2 John 1"],["Deuteronomy 1","Psalms 81–82","Isaiah 29","3 John 1"],["Deuteronomy 2","Psalms 83–84","Isaiah 30","Jude 1"],["Deuteronomy 3","Psalm 85","Isaiah 31","Revelation 1"],["Deuteronomy 4","Psalms 86–87","Isaiah 32","Revelation 2"],["Deuteronomy 5","Psalm 88","Isaiah 33","Revelation 3"],["Deuteronomy 6","Psalm 89","Isaiah 34","Revelation 4"],["Deuteronomy 7","Psalm 90","Isaiah 35","Revelation 5"],["Deuteronomy 8","Psalm 91","Isaiah 36","Revelation 6"],["Deuteronomy 9","Psalms 92–93","Isaiah 37","Revelation 7"],["Deuteronomy 10","Psalm 94","Isaiah 38","Revelation 8"],["Deuteronomy 11","Psalms 95–96","Isaiah 39","Revelation 9"],["Deuteronomy 12","Psalms 97–98","Isaiah 40","Revelation 10"],["Deuteronomy 13–14","Psalms 99–101","Isaiah 41","Revelation 11"],["Deuteronomy 15","Psalm 102","Isaiah 42","Revelation 12"],["Deuteronomy 16","Psalm 103","Isaiah 43","Revelation 13"],["Deuteronomy 17","Psalm 104","Isaiah 44","Revelation 14"],["Deuteronomy 18","Psalm 105","Isaiah 45","Revelation 15"],["Deuteronomy 19","Psalm 106","Isaiah 46","Revelation 16"],["Deuteronomy 20","Psalm 107","Isaiah 47","Revelation 17"],["Deuteronomy 21","Psalms 108–109","Isaiah 48","Revelation 18"],["Deuteronomy 22","Psalms 110–111","Isaiah 49","Revelation 19"],["Deuteronomy 23","Psalms 112–113","Isaiah 50","Revelation 20"],["Deuteronomy 24","Psalms 114–115","Isaiah 51","Revelation 21"],["Deuteronomy 25","Psalm 116","Isaiah 52","Revelation 22"],["Deuteronomy 26","Psalms 117–118","Isaiah 53","Matthew 1"],["Deuteronomy 27–28:19","Psalm 119:1–24","Isaiah 54","Matthew 2"],["Deuteronomy 28:20–68","Psalm 119:25–48","Isaiah 55","Matthew 3"],["Deuteronomy 29","Psalm 119:49–72","Isaiah 56","Matthew 4"],["Deuteronomy 30","Psalm 119:73–96","Isaiah 57","Matthew 5"],["Deuteronomy 31","Psalm 119:97–120","Isaiah 58","Matthew 6"],["Deuteronomy 32","Psalm 119:121–144","Isaiah 59","Matthew 7"],["Deuteronomy 33–34","Psalm 119:145–176","Isaiah 60","Matthew 8"],["Joshua 1","Psalms 120–122","Isaiah 61","Matthew 9"],["Joshua 2","Psalms 123–125","Isaiah 62","Matthew 10"],["Joshua 3","Psalms 126–128","Isaiah 63","Matthew 11"],["Joshua 4","Psalms 129–131","Isaiah 64","Matthew 12"],["Joshua 5–6:5","Psalms 132–134","Isaiah 65","Matthew 13"],["Joshua 6:6–27","Psalms 135–136","Isaiah 66","Matthew 14"],["Joshua 7","Psalms 137–138","Jeremiah 1","Matthew 15"],["Joshua 8","Psalm 139","Jeremiah 2","Matthew 16"],["Joshua 9","Psalms 140–141","Jeremiah 3","Matthew 17"],["Joshua 10","Psalms 142–143","Jeremiah 4","Matthew 18"],["Joshua 11","Psalm 144","Jeremiah 5","Matthew 19"],["Joshua 12–13","Psalm 145","Jeremiah 6","Matthew 20"],["Joshua 14–15","Psalms 146–147","Jeremiah 7","Matthew 21"],["Joshua 16–17","Psalm 148","Jeremiah 8","Matthew 22"],["Joshua 18–19","Psalms 149–150","Jeremiah 9","Matthew 23"],["Joshua 20–21","Acts 1","Jeremiah 10","Matthew 24"],["Joshua 22","Acts 2","Jeremiah 11","Matthew 25"],["Joshua 23","Acts 3","Jeremiah 12","Matthew 26"],["Joshua 24","Acts 4","Jeremiah 13","Matthew 27"],["Judges 1","Acts 5","Jeremiah 14","Matthew 28"],["Judges 2","Acts 6","Jeremiah 15","Mark 1"],["Judges 3","Acts 7","Jeremiah 16","Mark 2"],["Judges 4","Acts 8","Jeremiah 17","Mark 3"],["Judges 5","Acts 9","Jeremiah 18","Mark 4"],["Judges 6","Acts 10","Jeremiah 19","Mark 5"],["Judges 7","Acts 11","Jeremiah 20","Mark 6"],["Judges 8","Acts 12","Jeremiah 21","Mark 7"],["Judges 9","Acts 13","Jeremiah 22","Mark 8"],["Judges 10–11:11","Acts 14","Jeremiah 23","Mark 9"],["Judges 11:12–40","Acts 15","Jeremiah 24","Mark 10"],["Judges 12","Acts 16","Jeremiah 25","Mark 11"],["Judges 13","Acts 17","Jeremiah 26","Mark 12"],["Judges 14","Acts 18","Jeremiah 27","Mark 13"],["Judges 15","Acts 19","Jeremiah 28","Mark 14"],["Judges 16","Acts 20","Jeremiah 29","Mark 15"],["Judges 17","Acts 21","Jeremiah 30–31","Mark 16"],["Judges 18","Acts 22","Jeremiah 32","Psalms 1–2"],["Judges 19","Acts 23","Jeremiah 33","Psalms 3–4"],["Judges 20","Acts 24","Jeremiah 34","Psalms 5–6"],["Judges 21","Acts 25","Jeremiah 35","Psalms 7–8"],["Ruth 1","Acts 26","Jeremiah 36","Jeremiah 45","Psalm 9"],["Ruth 2","Acts 27","Jeremiah 37","Psalm 10"],["Ruth 3–4","Acts 28","Jeremiah 38","Psalms 11–12"],["1 Samuel 1","Romans 1","Jeremiah 39","Psalms 13–14"],["1 Samuel 2","Romans 2","Jeremiah 40","Psalms 15–16"],["1 Samuel 3","Romans 3","Jeremiah 41","Psalm 17"],["1 Samuel 4","Romans 4","Jeremiah 42","Psalm 18"],["1 Samuel 5–6","Romans 5","Jeremiah 43","Psalm 19"],["1 Samuel 7–8","Romans 6","Jeremiah 44","Psalms 20–21"],["1 Samuel 9","Romans 7","Jeremiah 46","Psalm 22"],["1 Samuel 10","Romans 8","Jeremiah 47","Psalms 23–24"],["1 Samuel 11","Romans 9","Jeremiah 48","Psalm 25"],["1 Samuel 12","Romans 10","Jeremiah 49","Psalms 26–27"],["1 Samuel 13","Romans 11","Jeremiah 50","Psalms 28–29"],["1 Samuel 14","Romans 12","Jeremiah 51","Psalm 30"],["1 Samuel 15","Romans 13","Jeremiah 52","Psalm 31"],["1 Samuel 16","Romans 14","Lamentations 1","Psalm 32"],["1 Samuel 17","Romans 15","Lamentations 2","Psalm 33"],["1 Samuel 18","Romans 16","Lamentations 3","Psalm 34"],["1 Samuel 19","1 Corinthians 1","Lamentations 4","Psalm 35"],["1 Samuel 20","1 Corinthians 2","Lamentations 5","Psalm 36"],["1 Samuel 21–22","1 Corinthians 3","Ezekiel 1","Psalm 37"],["1 Samuel 23","1 Corinthians 4","Ezekiel 2","Psalm 38"],["1 Samuel 24","1 Corinthians 5","Ezekiel 3","Psalm 39"],["1 Samuel 25","1 Corinthians 6","Ezekiel 4","Psalms 40–41"],["1 Samuel 26","1 Corinthians 7","Ezekiel 5","Psalms 42–43"],["1 Samuel 27","1 Corinthians 8","Ezekiel 6","Psalm 44"],["1 Samuel 28","1 Corinthians 9","Ezekiel 7","Psalm 45"],["1 Samuel 29–30","1 Corinthians 10","Ezekiel 8","Psalms 46–47"],["1 Samuel 31","1 Corinthians 11","Ezekiel 9","Psalm 48"],["2 Samuel 1","1 Corinthians 12","Ezekiel 10","Psalm 49"],["2 Samuel 2","1 Corinthians 13","Ezekiel 11","Psalm 50"],["2 Samuel 3","1 Corinthians 14","Ezekiel 12","Psalm 51"],["2 Samuel 4–5","1 Corinthians 15","Ezekiel 13","Psalms 52–54"],["2 Samuel 6","1 Corinthians 16","Ezekiel 14","Psalm 55"],["2 Samuel 7","2 Corinthians 1","Ezekiel 15","Psalms 56–57"],["2 Samuel 8–9","2 Corinthians 2","Ezekiel 16","Psalms 58–59"],["2 Samuel 10","2 Corinthians 3","Ezekiel 17","Psalms 60–61"],["2 Samuel 11","2 Corinthians 4","Ezekiel 18","Psalms 62–63"],["2 Samuel 12","2 Corinthians 5","Ezekiel 19","Psalms 64–65"],["2 Samuel 13","2 Corinthians 6","Ezekiel 20","Psalms 66–67"],["2 Samuel 14","2 Corinthians 7","Ezekiel 21","Psalm 68"],["2 Samuel 15","2 Corinthians 8","Ezekiel 22","Psalm 69"],["2 Samuel 16","2 Corinthians 9","Ezekiel 23","Psalms 70–71"],["2 Samuel 17","2 Corinthians 10","Ezekiel 24","Psalm 72"],["2 Samuel 18","2 Corinthians 11","Ezekiel 25","Psalm 73"],["2 Samuel 19","2 Corinthians 12","Ezekiel 26","Psalm 74"],["2 Samuel 20","2 Corinthians 13","Ezekiel 27","Psalms 75–76"],["2 Samuel 21","Galatians 1","Ezekiel 28","Psalm 77"],["2 Samuel 22","Galatians 2","Ezekiel 29","Psalm 78:1–37"],["2 Samuel 23","Galatians 3","Ezekiel 30","Psalm 78:38–72"],["2 Samuel 24","Galatians 4","Ezekiel 31","Psalm 79"],["1 Kings 1","Galatians 5","Ezekiel 32","Psalm 80"],["1 Kings 2","Galatians 6","Ezekiel 33","Psalms 81–82"],["1 Kings 3","Ephesians 1","Ezekiel 34","Psalms 83–84"],["1 Kings 4–5","Ephesians 2","Ezekiel 35","Psalm 85"],["1 Kings 6","Ephesians 3","Ezekiel 36","Psalm 86"],["1 Kings 7","Ephesians 4","Ezekiel 37","Psalms 87–88"],["1 Kings 8","Ephesians 5","Ezekiel 38","Psalm 89"],["1 Kings 9","Ephesians 6","Ezekiel 39","Psalm 90"],["1 Kings 10","Philippians 1","Ezekiel 40","Psalm 91"],["1 Kings 11","Philippians 2","Ezekiel 41","Psalms 92–93"],["1 Kings 12","Philippians 3","Ezekiel 42","Psalm 94"],["1 Kings 13","Philippians 4","Ezekiel 43","Psalms 95–96"],["1 Kings 14","Colossians 1","Ezekiel 44","Psalms 97–98"],["1 Kings 15","Colossians 2","Ezekiel 45","Psalms 99–101"],["1 Kings 16","Colossians 3","Ezekiel 46","Psalm 102"],["1 Kings 17","Colossians 4","Ezekiel 47","Psalm 103"],["1 Kings 18","1 Thessalonians 1","Ezekiel 48","Psalm 104"],["1 Kings 19","1 Thessalonians 2","Daniel 1","Psalm 105"],["1 Kings 20","1 Thessalonians 3","Daniel 2","Psalm 106"],["1 Kings 21","1 Thessalonians 4","Daniel 3","Psalm 107"],["1 Kings 22","1 Thessalonians 5","Daniel 4","Psalms 108–109"],["2 Kings 1","2 Thessalonians 1","Daniel 5","Psalms 110–111"],["2 Kings 2","2 Thessalonians 2","Daniel 6","Psalms 112–113"],["2 Kings 3","2 Thessalonians 3","Daniel 7","Psalms 114–115"],["2 Kings 4","1 Timothy 1","Daniel 8","Psalm 116"],["2 Kings 5","1 Timothy 2","Daniel 9","Psalms 117–118"],["2 Kings 6","1 Timothy 3","Daniel 10","Psalm 119:1–24"],["2 Kings 7","1 Timothy 4","Daniel 11","Psalm 119:25–48"],["2 Kings 8","1 Timothy 5","Daniel 12","Psalm 119:49–72"],["2 Kings 9","1 Timothy 6","Hosea 1","Psalm 119:73–96"],["2 Kings 10","2 Timothy 1","Hosea 2","Psalm 119:97–120"],["2 Kings 11–12","2 Timothy 2","Hosea 3–4","Psalm 119:121–144"],["2 Kings 13","2 Timothy 3","Hosea 5–6","Psalm 119:145–176"],["2 Kings 14","2 Timothy 4","Hosea 7","Psalms 120–122"],["2 Kings 15","Titus 1","Hosea 8","Psalms 123–125"],["2 Kings 16","Titus 2","Hosea 9","Psalms 126–128"],["2 Kings 17","Titus 3","Hosea 10","Psalms 129–131"],["2 Kings 18","Philemon 1","Hosea 11","Psalms 132–134"],["2 Kings 19","Hebrews 1","Hosea 12","Psalms 135–136"],["2 Kings 20","Hebrews 2","Hosea 13","Psalms 137–138"],["2 Kings 21","Hebrews 3","Hosea 14","Psalm 139"],["2 Kings 22","Hebrews 4","Joel 1","Psalms 140–141"],["2 Kings 23","Hebrews 5","Joel 2","Psalm 142"],["2 Kings 24","Hebrews 6","Joel 3","Psalm 143"],["2 Kings 25","Hebrews 7","Amos 1","Psalm 144"],["1 Chronicles 1–2","Hebrews 8","Amos 2","Psalm 145"],["1 Chronicles 3–4","Hebrews 9","Amos 3","Psalms 146–147"],["1 Chronicles 5–6","Hebrews 10","Amos 4","Psalms 148–150"],["1 Chronicles 7–8","Hebrews 11","Amos 5","Luke 1:1–38"],["1 Chronicles 9–10","Hebrews 12","Amos 6","Luke 1:39–80"],["1 Chronicles 11–12","Hebrews 13","Amos 7","Luke 2"],["1 Chronicles 13–14","James 1","Amos 8","Luke 3"],["1 Chronicles 15","James 2","Amos 9","Luke 4"],["1 Chronicles 16","James 3","Obadiah 1","Luke 5"],["1 Chronicles 17","James 4","Jonah 1","Luke 6"],["1 Chronicles 18","James 5","Jonah 2","Luke 7"],["1 Chronicles 19–20","1 Peter 1","Jonah 3","Luke 8"],["1 Chronicles 21","1 Peter 2","Jonah 4","Luke 9"],["1 Chronicles 22","1 Peter 3","Micah 1","Luke 10"],["1 Chronicles 23","1 Peter 4","Micah 2","Luke 11"],["1 Chronicles 24–25","1 Peter 5","Micah 3","Luke 12"],["1 Chronicles 26–27","2 Peter 1","Micah 4","Luke 13"],["1 Chronicles 28","2 Peter 2","Micah 5","Luke 14"],["1 Chronicles 29","2 Peter 3","Micah 6","Luke 15"],["2 Chronicles 1","1 John 1","Micah 7","Luke 16"],["2 Chronicles 2","1 John 2","Nahum 1","Luke 17"],["2 Chronicles 3–4","1 John 3","Nahum 2","Luke 18"],["2 Chronicles 5–6:11","1 John 4","Nahum 3","Luke 19"],["2 Chronicles 6:12–42","1 John 5","Habakkuk 1","Luke 20"],["2 Chronicles 7","2 John 1","Habakkuk 2","Luke 21"],["2 Chronicles 8","3 John 1","Habakkuk 3","Luke 22"],["2 Chronicles 9","Jude 1","Zephaniah 1","Luke 23"],["2 Chronicles 10","Revelation 1","Zephaniah 2","Luke 24"],["2 Chronicles 11–12","Revelation 2","Zephaniah 3","John 1"],["2 Chronicles 13","Revelation 3","Haggai 1","John 2"],["2 Chronicles 14–15","Revelation 4","Haggai 2","John 3"],["2 Chronicles 16","Revelation 5","Zechariah 1","John 4"],["2 Chronicles 17","Revelation 6","Zechariah 2","John 5"],["2 Chronicles 18","Revelation 7","Zechariah 3","John 6"],["2 Chronicles 19–20","Revelation 8","Zechariah 4","John 7"],["2 Chronicles 21","Revelation 9","Zechariah 5","John 8"],["2 Chronicles 22–23","Revelation 10","Zechariah 6","John 9"],["2 Chronicles 24","Revelation 11","Zechariah 7","John 10"],["2 Chronicles 25","Revelation 12","Zechariah 8","John 11"],["2 Chronicles 26","Revelation 13","Zechariah 9","John 12"],["2 Chronicles 27–28","Revelation 14","Zechariah 10","John 13"],["2 Chronicles 29","Revelation 15","Zechariah 11","John 14"],["2 Chronicles 30","Revelation 16","Zechariah 12–13:1","John 15"],["2 Chronicles 31","Revelation 17","Zechariah 13:2–9","John 16"],["2 Chronicles 32","Revelation 18","Zechariah 14","John 17"],["2 Chronicles 33","Revelation 19","Malachi 1","John 18"],["2 Chronicles 34","Revelation 20","Malachi 2","John 19"],["2 Chronicles 35","Revelation 21","Malachi 3","John 20"],["2 Chronicles 36","Revelation 22","Malachi 4","John 21"]];
+const NAMES = ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"];
+const START = new Date(2026, 9, 9); // Day 1: Friday 9 October 2026
+const TOTAL = 365;
+const MS_DAY = 86400000;
+
+/* ---------- dates ---------- */
+function midnight(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function dateOf(day){ const d = new Date(START); d.setDate(d.getDate() + day - 1 + (state.shift | 0)); return d; }
+function todayNum(){ return Math.round((midnight(new Date()) - START) / MS_DAY) + 1 - (state.shift | 0); } // may be < 1 before start
+function fmt(d, o){ return d.toLocaleDateString('en-GB', o || {weekday:'long', day:'numeric', month:'long', year:'numeric'}); }
+const clampDay = n => Math.min(TOTAL, Math.max(1, n));
+
+/* ---------- storage: local cache + private db ---------- */
+const LS = {
+  get(k, f){ try{ const v = localStorage.getItem('db1.'+k); return v ? JSON.parse(v) : f; }catch(e){ return f; } },
+  set(k, v){ try{ localStorage.setItem('db1.'+k, JSON.stringify(v)); }catch(e){} }
+};
+let state = { done: LS.get('done', {}), journal: LS.get('journal', {}), fs: LS.get('fs', 1.06), shift: LS.get('shift', 0), streakFrom: LS.get('streakFrom', 1), startDay: LS.get('startDay', 1), planAt: LS.get('planAt', 0) };
+const progressBody = () => ({done: state.done, shift: state.shift, streakFrom: state.streakFrom, startDay: state.startDay, planAt: state.planAt});
+function savePlanLocal(){ ['shift', 'streakFrom', 'startDay', 'planAt'].forEach(k => LS.set(k, state[k])); }
+let remote = null; // {db, uid}
+const pending = {};
+function writeRemote(docId, body){
+  if (!remote) return;
+  clearTimeout(pending[docId]);
+  pending[docId] = setTimeout(async () => {
+    try { await remote.db.doc('data/users/' + remote.uid + '/' + docId).set(body); }
+    catch(e){ if (e && e.code === 'invalid_argument') { remote = null; storeNote(); } }
+  }, 900);
+}
+function saveDone(){ LS.set('done', state.done); savePlanLocal(); writeRemote('progress', progressBody()); }
+function saveJournal(day){ LS.set('journal', state.journal); writeRemote('j' + day, state.journal[day] || {}); }
+
+function moveText(n){ const a = Math.abs(n); return a + ' day' + (a > 1 ? 's' : '') + (n > 0 ? ' later' : ' earlier'); }
+function shiftNote(){
+  const el = document.getElementById('shiftNote'); if (!el) return;
+  el.textContent = state.shift ? 'Compared with the original dates, your plan runs ' + moveText(state.shift) + '. It now ends on ' + fmt(dateOf(TOTAL), {day:'numeric', month:'long', year:'numeric'}) + '.' : 'You have not needed to catch up yet. The plan ends on ' + fmt(dateOf(TOTAL), {day:'numeric', month:'long', year:'numeric'}) + '.';
+}
+function storeNote(){
+  document.getElementById('storeNote').textContent = 'Your ticks, notes and prayers are saved privately on this phone, in this browser. Nobody else can see them, and they are never uploaded anywhere. Back up regularly from the More tab, and restore the backup if you change phone or clear your browser data.';
+}
+
+/* ---------- progress helpers ---------- */
+const nReadings = day => INDEX[day - 1].length;
+const fullMask = day => (1 << nReadings(day)) - 1;
+const isDone = (day, i) => ((state.done[day] | 0) >> i) & 1;
+const dayComplete = day => (state.done[day] | 0) === fullMask(day);
+function toggle(day, i, force){
+  let m = state.done[day] | 0;
+  const on = force === undefined ? !((m >> i) & 1) : force;
+  m = on ? (m | (1 << i)) : (m & ~(1 << i));
+  if (m) state.done[day] = m; else delete state.done[day];
+  saveDone(); renderAll();
+}
+function streak(){
+  const t = clampDay(todayNum());
+  let d = dayComplete(t) ? t : t - 1, s = 0;
+  while (d >= Math.max(1, state.streakFrom | 0) && dayComplete(d)) { s++; d--; }
+  return s;
+}
+function missedDays(){
+  const t = todayNum(), out = [];
+  for (let d = Math.max(1, state.startDay | 0); d < Math.min(t, TOTAL + 1); d++) if (!dayComplete(d)) out.push(d);
+  return out;
+}
+
+const isSkipped = d => d < (state.startDay | 0) && !dayComplete(d);
+function mergePlan(body){
+  // Takes plan settings from a backup or another device if they were changed more recently. Returns true if adopted.
+  if (!body || !((body.planAt || 0) > (state.planAt || 0))) return false;
+  state.shift = body.shift | 0; state.streakFrom = body.streakFrom | 0 || 1;
+  state.startDay = body.startDay | 0 || 1; state.planAt = body.planAt;
+  return true;
+}
+function startFrom(x){
+  // Makes Day x today's reading. Works forwards and backwards.
+  const t = todayNum();
+  state.shift = (state.shift | 0) + (t - x);
+  state.streakFrom = x; state.startDay = x; state.planAt = Date.now();
+  saveDone();
+  current = x; confirming = false;
+}
+function firstUnfinished(){ const m = missedDays(); return m.length ? m[0] : null; }
+function catchUp(){
+  const t = todayNum(), f = firstUnfinished();
+  if (f === null || t <= f) return;
+  state.shift = (state.shift | 0) + (t - f);
+  state.streakFrom = f; state.planAt = Date.now();
+  saveDone();
+  current = f; confirming = false;
+  if (view !== 'today') show('today'); else renderAll();
+}
+let confirming = false;
+let startAsk = null; // day number awaiting confirmation
+function startSummary(x){
+  const t = todayNum(), newShift = (state.shift | 0) + (t - x);
+  const end = new Date(START); end.setDate(end.getDate() + TOTAL - 1 + newShift);
+  let skip = 0; for (let d = Math.max(1, state.startDay | 0); d < x; d++) if (!dayComplete(d)) skip++;
+  return 'Day ' + x + ' (' + INDEX[x - 1][0] + '…) becomes today\'s reading and the plan ends ' + fmt(end, {day:'numeric', month:'long', year:'numeric'}) + '.' +
+    (skip ? ' ' + skip + ' unfinished day' + (skip > 1 ? 's' : '') + ' before it will be marked skipped.' : '') + ' Your streak starts again.';
+}
+function startBanner(day){
+  const t = todayNum(), el = document.createElement('div'); el.className = 'banner';
+  if (startAsk === day) {
+    el.innerHTML = '<span>' + startSummary(day) + '</span><span style="display:flex;gap:18px"><button data-a="no" style="color:var(--muted)">Cancel</button><button data-a="yes">Confirm</button></span>';
+  } else {
+    el.innerHTML = '<span>' + (t < 1 ? 'Day 1 starts on ' + fmt(dateOf(1), {weekday:'long', day:'numeric', month:'long'}) + '. ' : '') + 'You are looking at Day ' + day + (t >= 1 ? '. Today is Day ' + clampDay(t) : '') + '.</span>' +
+      '<span style="display:flex;gap:18px;flex-wrap:wrap">' + (t >= 1 ? '<button data-a="go" style="color:var(--muted)">Go to today</button>' : '') + '<button data-a="ask">Start from this day</button></span>';
+  }
+  el.querySelectorAll('button').forEach(btn => btn.onclick = () => {
+    const a = btn.dataset.a;
+    if (a === 'go') { startAsk = null; current = clampDay(t); }
+    else if (a === 'ask') startAsk = day;
+    else if (a === 'no') startAsk = null;
+    else { startAsk = null; startFrom(day); }
+    renderAll();
+  });
+  return el;
+}
+function catchUpBanner(){
+  const miss = missedDays(), f = miss[0], t = todayNum();
+  const el = document.createElement('div'); el.className = 'banner';
+  if (!confirming) {
+    el.innerHTML = '<span>' + miss.length + ' earlier day' + (miss.length > 1 ? 's' : '') + ' not finished. You are up to Day ' + f + '.</span><button data-a="ask">Catch me up</button>';
+  } else {
+    const gap = t - f, end = new Date(dateOf(TOTAL)); end.setDate(end.getDate() + gap);
+    el.innerHTML = '<span>Day ' + f + ' (' + INDEX[f - 1][0] + '…) becomes today. Every later day moves ' + gap + ' day' + (gap > 1 ? 's' : '') + ' later, the plan ends ' + fmt(end, {day:'numeric', month:'long', year:'numeric'}) + ', and your streak starts again.</span>' +
+      '<span style="display:flex;gap:18px"><button data-a="no" style="color:var(--muted)">Cancel</button><button data-a="yes">Confirm</button></span>';
+  }
+  el.querySelectorAll('button').forEach(btn => btn.onclick = () => {
+    const a = btn.dataset.a;
+    if (a === 'ask') { confirming = true; renderAll(); }
+    else if (a === 'no') { confirming = false; renderAll(); }
+    else catchUp();
+  });
+  return el;
+}
+
+/* ---------- day data ---------- */
+const cache = {};
+function loadDay(day){
+  if (!cache[day]) cache[day] = fetch('days/d' + String(day).padStart(3, '0') + '.json').then(r => {
+    if (!r.ok) throw new Error('status ' + r.status); return r.json();
+  }).catch(e => { delete cache[day]; throw e; });
+  return cache[day];
+}
+
+/* ---------- today view ---------- */
+let current = clampDay(todayNum());
+function groupOf(day, i){ return i < 2 ? 'Family' : 'Secret'; }
+
+function renderToday(){
+  const t = todayNum();
+  document.getElementById('dayTitle').innerHTML = '<span>Day</span>' + current;
+  document.getElementById('dayDate').textContent = fmt(dateOf(current));
+  const completeDays = Object.keys(state.done).filter(d => dayComplete(+d)).length;
+  const totalReadings = Object.values(state.done).reduce((a, m) => { let c = 0; while (m) { c += m & 1; m >>= 1; } return a + c; }, 0);
+  document.getElementById('stDone').textContent = completeDays;
+  document.getElementById('stStreak').textContent = streak();
+  document.getElementById('stChap').textContent = totalReadings;
+  document.getElementById('yearBar').style.width = (completeDays / TOTAL * 100).toFixed(1) + '%';
+  document.getElementById('yearText').textContent = completeDays + ' of 365 days · plan ends ' + fmt(dateOf(TOTAL), {day:'numeric', month:'long', year:'numeric'});
+
+  const b = document.getElementById('banners'); b.innerHTML = '';
+  if (t < 1 && current === 1) {
+    b.innerHTML = '<div class="banner"><span>Day 1 starts on ' + fmt(dateOf(1), {weekday:'long', day:'numeric', month:'long'}) + '. You can look ahead now.</span></div>';
+  } else if (t < 1) {
+    b.appendChild(startBanner(current));
+  } else if (current !== clampDay(t)) {
+    b.appendChild(startBanner(current));
+  } else {
+    const miss = missedDays();
+    if (miss.length) {
+      b.appendChild(catchUpBanner());
+    }
+  }
+
+  const rem = backupReminder(); if (rem) b.appendChild(rem);
+
+  const wrap = document.getElementById('readings'); wrap.innerHTML = '';
+  const refs = INDEX[current - 1];
+  // Family = first two readings, Secret = the rest
+  [['Family', [0, 1]], ['Secret', refs.map((_, i) => i).slice(2)]].forEach(([name, idxs]) => {
+    const g = document.createElement('div'); g.className = 'group';
+    g.innerHTML = '<div class="eyebrow"><span>' + name + '</span><span>' + (name === 'Family' ? 'read together' : 'read alone') + '</span></div>';
+    idxs.forEach(i => {
+      const btn = document.createElement('div');
+      btn.className = 'leaf' + (isDone(current, i) ? ' done' : '');
+      btn.innerHTML = '<button class="check" aria-label="Mark ' + refs[i] + ' as read"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="m3 7.2 2.6 2.6L11 4.4" stroke="var(--bg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '<button class="ref" style="text-align:left"><b>' + refs[i] + '</b><small>' + (state.journal[current] && state.journal[current]['r' + i] ? 'Notes written · ' : '') + 'Scripture, commentary, study</small></button>' +
+        '<svg class="chev" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      btn.querySelector('.check').onclick = e => { e.stopPropagation(); toggle(current, i); };
+      btn.querySelector('.ref').onclick = () => openReader(current, i);
+      g.appendChild(btn);
+    });
+    wrap.appendChild(g);
+  });
+  const pb = document.getElementById('prayerBox');
+  if (document.activeElement !== pb) pb.value = (state.journal[current] || {}).prayer || '';
+}
+
+/* ---------- reader ---------- */
+let rState = {day: 1, i: 0, tab: 'text', data: null};
+function esc(s){ return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+const STUDY = [
+  ['Observe', 'What happens or what is said? Note who is speaking, to whom, and any words or ideas that repeat.'],
+  ['God', 'What does this passage show you about God: his character, his ways, his promises?'],
+  ['Us', 'What does it show about people: our sin, our need, or what faithfulness looks like?'],
+  ['Christ', 'How does this point to Jesus, or how does the rest of Scripture fill it out?'],
+  ['Respond', 'Is there a promise to believe, a command to obey, a sin to confess, or an example to follow?']
+];
+function openReader(day, i){
+  rState = {day, i, tab: 'text', data: null};
+  document.getElementById('reader').hidden = false;
+  document.body.style.overflow = 'hidden';
+  document.getElementById('rTitle').textContent = INDEX[day - 1][i];
+  renderReader();
+  loadDay(day).then(d => { if (rState.day === day && rState.i === i) { rState.data = d; renderReader(); } })
+    .catch(() => { document.getElementById('rBody').innerHTML = '<p class="note">Could not load this reading. Check your connection and open it again.</p>'; });
+}
+function closeReader(){ document.getElementById('reader').hidden = true; document.body.style.overflow = ''; renderAll(); }
+function renderReader(){
+  const {day, i, tab, data} = rState;
+  ['text', 'comm', 'study'].forEach(t => document.getElementById('t-' + t).setAttribute('aria-selected', t === tab));
+  const body = document.getElementById('rBody');
+  const done = isDone(day, i);
+  const rd = document.getElementById('rDone');
+  rd.textContent = done ? 'Read ✓' : 'Mark as read'; rd.classList.toggle('isdone', !!done);
+  document.getElementById('rNext').textContent = i < nReadings(day) - 1 ? 'Next' : 'Done';
+  if (!data) { body.innerHTML = '<p class="note">Loading…</p>'; return; }
+  const r = data.r[i];
+  const book = NAMES[r.b];
+  if (tab === 'text') {
+    body.innerHTML = '<div class="eyebrow" style="margin-bottom:8px">' + groupOf(day, i) + ' · King James Version</div><div class="scripture">' +
+      r.text.map(s => '<h3>' + (book === 'Psalms' ? 'Psalm' : book) + ' ' + s.c + '</h3>' +
+        s.t.map((v, k) => '<p><sup>' + (s.v + k) + '</sup>' + esc(v) + '</p>').join('')).join('') + '</div>';
+  } else if (tab === 'comm') {
+    let html = '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div><div class="comm">';
+    r.comm.forEach(c => {
+      if (c.missing) { html += '<h4>' + book + ' ' + c.c + '</h4><p class="note">This edition of Matthew Henry\'s commentary has no notes on this chapter.</p>'; return; }
+      let inOutline = false, out = '';
+      c.p.forEach(p => {
+        if (p === '<h4>Chapter Outline</h4>') { inOutline = true; out += '<div class="outline"><div class="eyebrow" style="margin-bottom:4px">Outline</div>'; return; }
+        if (inOutline && (p.startsWith('<b>') || p.startsWith('<h4>'))) { inOutline = false; out += '</div>'; }
+        if (inOutline) { out += '<div>' + p + '</div>'; return; }
+        if (/^<h4>Chapter \d+<\/h4>$/.test(p)) { out += p.replace(/Chapter (\d+)/, (book === 'Psalms' ? 'Psalm ' : book + ' ') + '$1'); return; }
+        if (p.startsWith('<b>') || p.startsWith('<h4>')) { out += p; return; }
+        out += '<p>' + p + '</p>';
+      });
+      if (inOutline) out += '</div>';
+      html += out;
+    });
+    body.innerHTML = html + '</div>';
+  } else {
+    const j = (state.journal[day] || {})['r' + i] || '';
+    body.innerHTML = '<div class="study"><div class="eyebrow" style="margin-bottom:10px">Questions for ' + esc(r.ref) + '</div><ol>' +
+      STUDY.map(([h, q]) => '<li><strong>' + h + '</strong>' + q + '</li>').join('') + '</ol>' +
+      '<label class="eyebrow" for="jBox" style="display:block;margin-bottom:8px">Your notes</label>' +
+      '<textarea id="jBox" style="min-height:200px" placeholder="Write your answers here.">' + esc(j) + '</textarea><div class="saved" id="jSaved"></div></div>';
+    const box = document.getElementById('jBox');
+    box.addEventListener('input', () => setJournal(day, 'r' + i, box.value, 'jSaved'));
+  }
+  body.parentElement.scrollTop = 0;
+}
+let jTimer;
+function setJournal(day, key, val, savedId){
+  state.journal[day] = Object.assign({}, state.journal[day], {[key]: val, at: Date.now()});
+  const s = document.getElementById(savedId); if (s) s.textContent = 'Saving…';
+  clearTimeout(jTimer);
+  jTimer = setTimeout(() => { saveJournal(day); const s2 = document.getElementById(savedId); if (s2) s2.textContent = 'Saved'; }, 600);
+}
+
+/* ---------- calendar ---------- */
+function renderCal(){
+  const t = todayNum(), miss = missedDays();
+  const completeDays = Object.keys(state.done).filter(d => dayComplete(+d)).length;
+  const sum = document.getElementById('calSummary');
+  sum.innerHTML = '<span>' + completeDays + ' complete' + (state.shift ? ' · plan runs ' + moveText(state.shift) + ' than first set' : '') + '. Tap any day to open it.</span>';
+  const cb = document.getElementById('calCatch'); cb.innerHTML = '';
+  let sk = 0; for (let d = 1; d < (state.startDay | 0); d++) if (!dayComplete(d)) sk++;
+  if (sk) sum.innerHTML += '<span class="small">' + sk + ' skipped. You can still open and read them.</span>';
+  if (miss.length) cb.appendChild(catchUpBanner());
+  const m = document.getElementById('months'); m.innerHTML = '';
+  let d = 1;
+  while (d <= TOTAL) {
+    const first = dateOf(d), month = first.getMonth();
+    const sec = document.createElement('div'); sec.className = 'month';
+    sec.innerHTML = '<h3>' + fmt(first, {month:'long', year:'numeric'}) + '</h3>';
+    const grid = document.createElement('div'); grid.className = 'grid';
+    const lead = (first.getDay() + 6) % 7; // Monday first
+    for (let k = 0; k < lead; k++) { const p = document.createElement('div'); p.className = 'cell pad'; grid.appendChild(p); }
+    while (d <= TOTAL && dateOf(d).getMonth() === month) {
+      const c = document.createElement('button');
+      const cls = dayComplete(d) ? 'done' : (state.done[d] ? 'part' : (isSkipped(d) ? 'skip' : (d < t ? 'miss' : '')));
+      c.className = 'cell ' + cls + (d === t ? ' today' : '');
+      c.textContent = dateOf(d).getDate();
+      c.setAttribute('aria-label', 'Day ' + d + ', ' + fmt(dateOf(d)) + ': ' + INDEX[d - 1].join(', '));
+      const dd = d; c.onclick = () => { current = dd; show('today'); };
+      grid.appendChild(c); d++;
+    }
+    sec.appendChild(grid); m.appendChild(sec);
+  }
+}
+
+/* ---------- journal ---------- */
+function renderJournal(){
+  const list = document.getElementById('jlist'); list.innerHTML = '';
+  const days = Object.keys(state.journal).filter(k => {
+    const j = state.journal[k]; return Object.keys(j).some(x => x !== 'at' && (j[x] || '').trim());
+  }).map(Number).sort((a, b) => b - a);
+  if (!days.length) { list.innerHTML = '<p class="empty">Nothing written yet. Notes you write in a reading\'s Study tab, and your prayer for the day, will appear here.</p>'; return; }
+  days.forEach(day => {
+    const j = state.journal[day];
+    const parts = [];
+    if ((j.prayer || '').trim()) parts.push('Prayer: ' + j.prayer.trim());
+    INDEX[day - 1].forEach((ref, i) => { const v = (j['r' + i] || '').trim(); if (v) parts.push(ref + ': ' + v); });
+    const el = document.createElement('button'); el.className = 'jentry';
+    el.innerHTML = '<div class="eyebrow">Day ' + day + ' · ' + fmt(dateOf(day), {day:'numeric', month:'short'}) + '</div><p></p>';
+    el.querySelector('p').textContent = parts.join('\n\n');
+    el.onclick = () => { current = day; show('today'); };
+    list.appendChild(el);
+  });
+}
+
+/* ---------- backup & restore ---------- */
+const BK_PREFIX = 'DAILYBREAD-BACKUP:';
+if (!LS.get('firstUse', 0)) LS.set('firstUse', Date.now());
+let remoteChecked = true;
+function backupObject(){
+  return {app: 'daily-bread', v: 1, at: Date.now(), done: state.done, journal: state.journal,
+    shift: state.shift, streakFrom: state.streakFrom, startDay: state.startDay, planAt: state.planAt};
+}
+function toB64(str){ const bytes = new TextEncoder().encode(str); let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b)); return btoa(bin); }
+function fromB64(b64){ const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
+function backupText(){ return BK_PREFIX + toB64(JSON.stringify(backupObject())); }
+function parseBackup(raw){
+  let t = (raw || '').trim(), obj;
+  const at = t.indexOf(BK_PREFIX);
+  if (at >= 0) obj = JSON.parse(fromB64(t.slice(at + BK_PREFIX.length).replace(/[^A-Za-z0-9+/=]/g, '')));
+  else obj = JSON.parse(t);
+  if (!obj || obj.app !== 'daily-bread' || typeof obj.done !== 'object') throw new Error('not a backup');
+  return obj;
+}
+const daysSince = ts => Math.floor((Date.now() - ts) / MS_DAY);
+const hasData = () => Object.keys(state.done).length > 0 || Object.keys(state.journal).length > 0;
+function markBackedUp(){ LS.set('lastBackup', Date.now()); renderAll(); }
+function backupReminder(){
+  if (!remoteChecked || remote || !hasData()) return null;
+  const last = LS.get('lastBackup', 0), since = daysSince(last || LS.get('firstUse', Date.now()));
+  if (since < 14) return null;
+  const el = document.createElement('div'); el.className = 'banner';
+  el.innerHTML = '<span>' + (last ? 'Your last backup was ' + since + ' days ago.' : 'You have not backed up your progress yet.') + ' Your progress is saved on this phone only.</span><button>Back up now</button>';
+  el.querySelector('button').onclick = () => { show('about'); document.getElementById('backup').scrollIntoView(); };
+  return el;
+}
+function renderMore(){
+  const last = LS.get('lastBackup', 0);
+  document.getElementById('backupWhen').textContent = last
+    ? 'Last backup on this device: ' + fmt(new Date(last), {day:'numeric', month:'long', year:'numeric'}) + (daysSince(last) ? ' (' + daysSince(last) + ' day' + (daysSince(last) > 1 ? 's' : '') + ' ago).' : ' (today).')
+    : 'No backup made on this device yet.';
+}
+document.getElementById('bkCopy').onclick = () => {
+  const text = backupText(), box = document.getElementById('bkText'), msg = document.getElementById('bkMsg');
+  box.value = text;
+  const fallback = () => {
+    box.hidden = false; box.focus(); box.select();
+    msg.textContent = 'Copying is blocked here. Select all the text in the box below, copy it, and paste it into an email to yourself.';
+  };
+  try {
+    navigator.clipboard.writeText(text).then(() => {
+      box.hidden = true;
+      msg.textContent = 'Backup copied. Paste it into an email to yourself and send it.';
+      markBackedUp();
+    }, fallback);
+  } catch(e){ fallback(); }
+};
+document.getElementById('bkFile').onclick = async () => {
+  const msg = document.getElementById('bkMsg');
+  const name = 'daily-bread-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  const body = JSON.stringify(backupObject());
+  try {
+    const file = new File([body], name, {type: 'application/json'});
+    if (navigator.canShare && navigator.canShare({files: [file]})) {
+      await navigator.share({files: [file], title: 'Daily Bread backup'});
+      msg.textContent = 'Backup sent. Save it to Files or email it to yourself.'; markBackedUp(); return;
+    }
+  } catch(e){ if (e && e.name === 'AbortError') { msg.textContent = 'Cancelled.'; return; } }
+  try {
+    const url = URL.createObjectURL(new Blob([body], {type: 'application/json'}));
+    const link = document.createElement('a'); link.href = url; link.download = name;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    msg.textContent = 'Backup file downloaded.'; markBackedUp();
+  } catch(e){ msg.textContent = 'Saving a file did not work here. Use Copy backup instead.'; }
+};
+
+let pendingRestore = null;
+function previewRestore(raw){
+  const msg = document.getElementById('rsMsg'), acts = document.getElementById('rsActions');
+  try {
+    const b = parseBackup(raw);
+    const days = Object.keys(b.done).filter(d => ((b.done[d] | 0) === fullMask(+d))).length;
+    const notes = Object.keys(b.journal || {}).length;
+    pendingRestore = b;
+    msg.className = 'small';
+    msg.textContent = 'Backup from ' + fmt(new Date(b.at), {day:'numeric', month:'long', year:'numeric'}) + ': ' + days + ' day' + (days === 1 ? '' : 's') + ' complete, notes on ' + notes + ' day' + (notes === 1 ? '' : 's') + (b.shift ? ', plan running ' + moveText(b.shift) + ' than first set' : '') + '. Restore it?';
+    acts.hidden = false;
+  } catch(e){
+    pendingRestore = null; acts.hidden = true;
+    msg.className = 'small bad';
+    msg.textContent = 'That is not a Daily Bread backup, or part of it is missing. Copy the whole backup, from DAILYBREAD-BACKUP: to the end, and try again.';
+  }
+}
+function applyRestore(b){
+  for (const k in b.done) state.done[k] = (state.done[k] | 0) | (b.done[k] | 0);
+  const changedDays = [];
+  for (const day in (b.journal || {})) {
+    const mine = state.journal[day], theirs = b.journal[day];
+    if (!mine || (theirs.at || 0) > (mine.at || 0)) { state.journal[day] = theirs; changedDays.push(day); }
+  }
+  mergePlan(b);
+  saveDone();
+  LS.set('journal', state.journal);
+  changedDays.forEach(d => writeRemote('j' + d, state.journal[d]));
+  current = clampDay(todayNum());
+}
+document.getElementById('rsCheck').onclick = () => previewRestore(document.getElementById('rsText').value);
+document.getElementById('rsFile').onchange = e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { document.getElementById('rsText').value = r.result; previewRestore(r.result); };
+  r.readAsText(f); e.target.value = '';
+};
+document.getElementById('rsCancel').onclick = () => { pendingRestore = null; document.getElementById('rsActions').hidden = true; document.getElementById('rsMsg').textContent = ''; };
+document.getElementById('rsGo').onclick = () => {
+  if (!pendingRestore) return;
+  applyRestore(pendingRestore); pendingRestore = null;
+  document.getElementById('rsActions').hidden = true;
+  document.getElementById('rsText').value = '';
+  document.getElementById('rsMsg').textContent = 'Restored. Your ticks, notes and plan dates are back.';
+  renderAll();
+};
+
+/* ---------- start from a day (More tab) ---------- */
+let startPick = null;
+function readStartInput(){
+  const v = Number(document.getElementById('startInput').value);
+  return Number.isInteger(v) && v >= 1 && v <= TOTAL ? v : null;
+}
+document.getElementById('startGo').onclick = () => {
+  const x = readStartInput(), pv = document.getElementById('startPreview'), acts = document.getElementById('startActions');
+  pv.hidden = false;
+  if (!x) { startPick = null; acts.hidden = true; pv.className = 'startpreview small bad'; pv.textContent = 'Enter a day number from 1 to 365.'; return; }
+  startPick = x; pv.className = 'startpreview small'; pv.textContent = startSummary(x); acts.hidden = false;
+};
+document.getElementById('startInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('startGo').click(); });
+document.getElementById('startCancel').onclick = () => { startPick = null; document.getElementById('startPreview').hidden = true; document.getElementById('startActions').hidden = true; };
+document.getElementById('startConfirm').onclick = () => {
+  if (!startPick) return;
+  startFrom(startPick); startPick = null;
+  document.getElementById('startInput').value = '';
+  document.getElementById('startPreview').hidden = true; document.getElementById('startActions').hidden = true;
+  show('today');
+};
+
+/* ---------- shell ---------- */
+let view = 'today';
+function show(v){
+  view = v;
+  ['today', 'cal', 'journal', 'about'].forEach(k => document.getElementById('v-' + k).hidden = k !== v);
+  document.querySelectorAll('.tabbar button').forEach(b => { if (b.dataset.view === v) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  renderAll(); window.scrollTo(0, 0);
+}
+function renderAll(){
+  shiftNote();
+  if (view === 'today') renderToday();
+  if (view === 'cal') renderCal();
+  if (view === 'journal') renderJournal();
+  if (view === 'about') renderMore();
+}
+function applyFs(){ document.documentElement.style.setProperty('--fs-read', state.fs + 'rem'); }
+
+document.querySelectorAll('.tabbar button').forEach(b => b.onclick = () => show(b.dataset.view));
+document.getElementById('prevDay').onclick = () => { startAsk = null; current = clampDay(current - 1); renderToday(); };
+document.getElementById('nextDay').onclick = () => { startAsk = null; current = clampDay(current + 1); renderToday(); };
+document.getElementById('rClose').onclick = closeReader;
+['text', 'comm', 'study'].forEach(t => document.getElementById('t-' + t).onclick = () => { rState.tab = t; renderReader(); });
+document.getElementById('rDone').onclick = () => { toggle(rState.day, rState.i); renderReader(); };
+document.getElementById('rNext').onclick = () => {
+  if (!isDone(rState.day, rState.i)) toggle(rState.day, rState.i, true);
+  if (rState.i < nReadings(rState.day) - 1) openReader(rState.day, rState.i + 1); else closeReader();
+};
+document.getElementById('fsUp').onclick = () => { state.fs = Math.min(1.5, +(state.fs + .08).toFixed(2)); LS.set('fs', state.fs); applyFs(); };
+document.getElementById('fsDown').onclick = () => { state.fs = Math.max(.9, +(state.fs - .08).toFixed(2)); LS.set('fs', state.fs); applyFs(); };
+const pb = document.getElementById('prayerBox');
+pb.addEventListener('input', () => setJournal(current, 'prayer', pb.value, 'prayerSaved'));
+document.addEventListener('visibilitychange', () => { if (!document.hidden && view === 'today' && document.getElementById('reader').hidden) { const t = clampDay(todayNum()); renderAll(); } });
+
+applyFs(); storeNote(); renderAll();
+loadDay(current).catch(() => {});
+renderAll();
+// Offline support: keep the app and the days around today on the phone.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(() => {
+      const t = clampDay(todayNum());
+      for (let d = Math.max(1, t - 1); d <= Math.min(TOTAL, t + 7); d++) loadDay(d).catch(() => {});
+    }).catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>
