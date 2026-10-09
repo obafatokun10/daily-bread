@@ -291,6 +291,7 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
       <p>Once installed it opens full screen like an app. Days you have opened are kept on the phone, so you can read them without a connection.</p>
       <h2>Where your progress is kept</h2>
       <p id="storeNote" class="small">Checking…</p>
+      <p class="small">App version: 9 October 2026 (3)</p>
     </div>
   </section>
 </div>
@@ -887,7 +888,19 @@ renderAll();
 // Offline support: keep the app and the days around today on the phone.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').then(() => {
+    // When a new version of the app is installed, reload once so it shows straight away.
+    let reloaded = false;
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloaded) return;
+      const readerOpen = !document.getElementById('reader').hidden;
+      const typing = document.activeElement && document.activeElement.tagName === 'TEXTAREA';
+      if (readerOpen || typing) return; // never interrupt reading or writing; it updates next time
+      reloaded = true; location.reload();
+    });
+    navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(reg => {
+      reg.update().catch(() => {});
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
       const t = clampDay(todayNum());
       for (let d = Math.max(1, t - 1); d <= Math.min(TOTAL, t + 7); d++) { loadDay(d).catch(() => {}); if (trId !== 'KJV') loadText(trId, d).catch(() => {}); }
     }).catch(() => {});
