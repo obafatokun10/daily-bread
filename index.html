@@ -151,11 +151,19 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
 .panel h2{font:500 1.5rem var(--display)}
 .panel p{margin:0;line-height:1.5}
 .formrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.formrow input{width:7em;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:500 1rem var(--ui);font-variant-numeric:tabular-nums}
+.formrow input[type=number]{width:7em}
+.formrow input{padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:500 1rem var(--ui);font-variant-numeric:tabular-nums}
 .panelactions{display:flex;gap:8px;flex-wrap:wrap}
 .panelactions .primary{flex:1;min-width:140px}
 .filebtn{display:inline-flex;align-items:center;cursor:pointer}
 .startpreview{background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:12px 14px;line-height:1.45}
+.cmrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.cmrow div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.cmrow b{font:600 .95rem var(--ui)}
+.cmrow .secondary{padding:8px 12px;flex:none}
+label.primary[aria-disabled="true"]{opacity:.5}
+.comm details.intro{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:6px 0 14px}
+.comm details.intro summary{cursor:pointer;font:600 .9rem var(--ui);color:var(--accent)}
 .panel textarea{min-height:80px;font:400 .8rem/1.4 ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
 .bad{color:var(--wine)}
 
@@ -267,6 +275,21 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
       </div>
     </section>
 
+    <section class="panel" aria-labelledby="h-comm">
+      <h2 id="h-comm">Your commentaries</h2>
+      <p class="small">Add a commentary you own as a PDF or text file. It is read and stored on this phone only, never uploaded, and it is not part of your backup. Large books take a minute or two.</p>
+      <div id="cmList"></div>
+      <div class="formrow">
+        <input id="cmName" type="text" placeholder="Name (optional)" aria-label="Commentary name" style="flex:1;width:auto;min-width:0">
+        <label class="primary filebtn" id="cmPick" for="cmFile" style="justify-content:center">Import file</label>
+        <input id="cmFile" type="file" accept=".pdf,.txt,application/pdf,text/plain" hidden>
+      </div>
+      <div class="bar" id="cmBar" hidden><i></i></div>
+      <div class="small" id="cmMsg" role="status"></div>
+      <div class="panelactions"><button class="secondary" id="cmCancel" hidden>Cancel import</button></div>
+      <p class="small">Works best when the file has a heading for each book (like GENESIS) and passage headings (like 1:1–2:3). Scanned PDFs, which are pictures of pages, cannot be read.</p>
+    </section>
+
     <div class="prose">
       <h2>About the plan</h2>
       <p>Robert Murray M'Cheyne, a minister in Dundee, drew up this calendar in 1842 for his congregation. Each day has four chapters from different parts of the Bible. Over 365 days you read the Old Testament once and the New Testament and Psalms twice.</p>
@@ -291,7 +314,7 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
       <p>Once installed it opens full screen like an app. Days you have opened are kept on the phone, so you can read them without a connection.</p>
       <h2>Where your progress is kept</h2>
       <p id="storeNote" class="small">Checking…</p>
-      <p class="small">App version: 9 October 2026 (4)</p>
+      <p class="small">App version: 9 October 2026 (5)</p>
     </div>
   </section>
 </div>
@@ -627,7 +650,21 @@ function renderReader(){
   if (tab === 'text') {
     renderScripture(body, day, i, r, book);
   } else if (tab === 'comm') {
-    let html = gatewayCommHtml(r) + '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div><div class="comm">';
+    const comms = (typeof CM !== 'undefined') ? CM.list() : [];
+    let cid = LS.get('comm', 'mhcc'); if (cid !== 'mhcc' && !comms.some(c => c.id === cid)) cid = 'mhcc';
+    const picker = comms.length ? '<div class="trbar"><div class="eyebrow">Commentary</div><select id="cmSel" aria-label="Commentary"><option value="mhcc">Matthew Henry · Concise Commentary</option>' +
+      comms.map(c => '<option value="' + c.id + '"' + (c.id === cid ? ' selected' : '') + '>' + esc(c.name) + ' (on this phone)</option>').join('') + '</select></div>' : '';
+    const wirePicker = () => { const sel = document.getElementById('cmSel'); if (sel) sel.onchange = e => { LS.set('comm', e.target.value); renderReader(); }; };
+    if (cid !== 'mhcc') {
+      body.innerHTML = gatewayCommHtml(r) + picker + '<div class="comm"><p class="note">Loading…</p></div>'; wirePicker();
+      renderImported(cid, r, book).then(h => {
+        if (rState.day !== day || rState.i !== i || rState.tab !== 'comm') return;
+        body.querySelector('.comm').innerHTML = h;
+      }).catch(() => { body.querySelector('.comm').innerHTML = '<p class="note">Could not open this commentary on this phone.</p>'; });
+      body.parentElement.scrollTop = 0;
+      return;
+    }
+    let html = gatewayCommHtml(r) + picker + (picker ? '' : '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div>') + '<div class="comm">';
     r.comm.forEach(c => {
       if (c.missing) { html += '<h4>' + book + ' ' + c.c + '</h4><p class="note">This edition of Matthew Henry\'s commentary has no notes on this chapter.</p>'; return; }
       let inOutline = false, out = '';
@@ -642,7 +679,7 @@ function renderReader(){
       if (inOutline) out += '</div>';
       html += out;
     });
-    body.innerHTML = html + '</div>';
+    body.innerHTML = html + '</div>'; wirePicker();
   } else {
     const j = (state.journal[day] || {})['r' + i] || '';
     body.innerHTML = '<div class="study"><div class="eyebrow" style="margin-bottom:10px">Questions for ' + esc(r.ref) + '</div><ol>' +
@@ -913,6 +950,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-
+<script src="import.js"></script>
 </body>
 </html>

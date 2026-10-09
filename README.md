@@ -17,6 +17,10 @@ Open the site, then:
 - **iPhone:** Safari → Share → *Add to Home Screen*
 - **Android:** Chrome → ⋮ → *Add to Home screen* / *Install app*
 
+## Your own commentaries
+
+More → **Your commentaries** imports a commentary you own (PDF or plain text). It is read on your phone, split by book and passage headings, and stored in your browser only. Nothing is uploaded. PDF reading uses [PDF.js](https://mozilla.github.io/pdf.js/) (Apache 2.0, in `vendor/`).
+
 ## Privacy
 
 Your progress, notes and prayers are stored only in your own browser. Nothing is uploaded. Use **More → Back up** to keep a copy.
