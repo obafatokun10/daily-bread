@@ -175,7 +175,15 @@ function parseCommentary(pages){
   //    headings in capitals, then keep the longest run of books in Bible order.
   let cands = [];
   lines.forEach((l, i) => { const h = bookHeading(l.t); if (h) cands.push({i, ...h, caps: l.t === l.t.toUpperCase()}); });
-  cands = cands.filter((c, k) => !((cands[k - 1] && c.i - cands[k - 1].i <= 3) || (cands[k + 1] && cands[k + 1].i - c.i <= 3)));
+  { // drop runs of 3+ book names close together (a contents list)
+    const drop = new Set(); let run = [0];
+    for (let k = 1; k <= cands.length; k++) {
+      if (k < cands.length && cands[k].i - cands[k - 1].i <= 3) { run.push(k); continue; }
+      if (run.length >= 3) run.forEach(x => drop.add(x));
+      run = [k];
+    }
+    cands = cands.filter((c, k) => !drop.has(k));
+  }
   if (cands.filter(c => c.caps).length >= cands.length / 2) cands = cands.filter(c => c.caps);
   const top = c => c.pair !== null ? c.pair : c.b;
   const best = cands.map(() => 1), from = cands.map(() => -1);
@@ -186,6 +194,13 @@ function parseCommentary(pages){
     // among equally long chains prefer the one ending latest (real headings come after front matter)
     best.forEach((v, j) => { if (v === best[k] && j > k) k = j; });
     while (k >= 0) { starts.unshift(cands[k]); k = from[k]; }
+    // Each book starts at its FIRST heading after the previous book; later ones are page headers.
+    let after = -1;
+    starts.forEach((st, n) => {
+      const first = cands.find(c => c.b === st.b && c.i > after);
+      if (first) starts[n] = first;
+      after = starts[n].i;
+    });
   }
   const books = {};
   let nSections = 0;
@@ -193,9 +208,10 @@ function parseCommentary(pages){
     const stop = si + 1 < starts.length ? starts[si + 1].i : lines.length;
     const body = lines.slice(s.i + 1, stop);
     let book = s.b; const pair = s.pair;
-    const secs = []; let intro = []; let cur = null; let last = [0, 0];
+    const secs = []; let intro = []; let cur = null; let last = [0, 0]; let outlineFrom = 0;
     const maxCh = b => NAMES[b] ? (b === 18 ? 150 : INDEX_CHAPTERS[b]) : 0;
     body.forEach((l, i) => {
+      if (l.pageStart) { const h = bookHeading(l.t); if (h && (h.b === s.b || h.b === s.pair)) return; } // running header
       const prev = body[i - 1];
       const prevEnds = !prev || l.gapBefore || /[.?!:”’")\]]$/.test(prev.t) || prev.t.length < 45;
       let m = l.t.length <= 90 && prevEnds ? l.t.match(REF_RE) : null;
@@ -206,15 +222,28 @@ function parseCommentary(pages){
           let b = book;
           if (m[1] && pair !== null) { const pre = m[1].trim().replace(/^I{1,3}/, r => String(r.length)); if (/^2/.test(pre)) b = pair; else if (/^1/.test(pre)) b = s.b; }
           const c1 = +m[2], v1 = +m[3], c2 = m[4] ? +m[4] : (m[5] ? c1 : null), v2 = m[5] ? +m[5] : null;
-          if (pair !== null && b === book && (c1 < last[0]) && c1 === 1) b = pair; // second book restarts at chapter 1
-          const sameBookBack = b === book && (c1 < last[0] || (c1 === last[0] && v1 < last[1]));
-          if (c1 >= 1 && c1 <= maxCh(b) && (!c2 || (c2 >= c1 && c2 <= maxCh(b))) && !sameBookBack) mark = {b, c1, v1, c2, v2, title};
+          let back = b === book && (c1 < last[0] || (c1 === last[0] && v1 < last[1]));
+          // Many commentaries open each book with an outline that lists every section.
+          // If the headings jump back to the start and the sections so far hold almost
+          // no text, they were that outline: keep it with the introduction and start again.
+          const sinceReset = secs.slice(outlineFrom);
+          if (back && sinceReset.length >= 3 && sinceReset.reduce((n, x) => n + x.lines.length, 0) <= sinceReset.length * 2) {
+            intro.push({t: 'Outline', gapBefore: true});
+            sinceReset.forEach(x => intro.push({t: x.label + (x.title ? ' ' + x.title : '') + (x.lines.length ? ' ' + x.lines.map(y => y.t).join(' ') : ''), gapBefore: true}));
+            secs.length = outlineFrom; cur = null; last = [0, 0]; book = s.b;
+            if (!(m[1] && pair !== null && /^(2|II)/.test(m[1].trim()))) b = s.b;
+            back = false;
+          }
+          if (back && pair !== null && b === book && c1 === 1) { b = pair; back = false; } // second book restarts at chapter 1
+          const sameBookBack = back;
+          if (c1 >= 1 && c1 <= maxCh(b) && (!c2 || (c2 >= c1 && c2 <= maxCh(b))) && !sameBookBack) mark = {b, c1, v1, c2, v2, title, label: l.t.slice(0, l.t.length - title.length).trim()};
         }
       } else if ((m = l.t.length <= 60 && prevEnds ? l.t.match(CHAP_RE) : null)) {
         const c1 = +m[1];
         if (c1 >= 1 && c1 <= maxCh(book) && c1 >= last[0]) mark = {b: book, c1, v1: 1, c2: c1, v2: 999, title: (m[2] || '').trim(), chapterOnly: true};
       }
       if (mark) {
+        if (mark.b !== book) outlineFrom = secs.length;
         book = mark.b; last = [mark.c1, mark.v1];
         cur = {...mark, lines: []}; secs.push(cur);
         return;
@@ -228,8 +257,25 @@ function parseCommentary(pages){
         if (nx && nx.c1 === x.c1) { x.c2 = x.c1; x.v2 = Math.max(x.v1, nx.v1 - 1); }
         else { x.c2 = x.c1; x.v2 = 999; }
       }
+      // A heading's title is often on the line after the reference.
+      const f = x.lines[0];
+      if (!x.title && f && f.t.length < 70 && !/[.,;]$/.test(f.t) && /^[A-Z“"‘']/.test(f.t) && !REF_RE.test(f.t)) { x.title = f.t; x.lines.shift(); if (x.lines[0]) x.lines[0].gapBefore = true; }
       x.paras = toParas(x.lines); delete x.lines;
     });
+    // Tidy up: drop empty headings left over from outlines. Keep an empty heading only
+    // when it introduces a group (the next section starts at the same verse).
+    const key = x => x.b + '.' + x.c1 + '.' + x.v1 + '.' + x.c2 + '.' + x.v2;
+    const full = new Set(secs.filter(x => x.paras.length).map(key));
+    const kept = secs.filter((x, k) => {
+      if (x.paras.length) return true;
+      if (full.has(key(x))) return false;
+      const nx = secs[k + 1];
+      return nx && nx.b === x.b && nx.c1 === x.c1 && nx.v1 === x.v1 && nx.paras.length && !(nx.c2 === x.c2 && nx.v2 === x.v2);
+    });
+    // and keep only the first copy of any heading that appears twice
+    const seen = new Set();
+    secs.length = 0;
+    kept.forEach(x => { const k = key(x) + '|' + x.paras.length; if (!seen.has(k)) { seen.add(k); secs.push(x); } });
     const groups = {};
     secs.forEach(x => { (groups[x.b] = groups[x.b] || []).push([x.c1, x.v1, x.c2, x.v2 || 999, x.title, x.paras]); });
     if (!groups[s.b]) groups[s.b] = [];
