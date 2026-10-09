@@ -488,7 +488,13 @@ function gatewayHtml(ref){
   const q = bgSearch(ref);
   return '<div class="gateway"><div class="eyebrow">Also on Bible Gateway</div><div class="gwlinks">' +
     BG_VERSIONS.map(v => '<a href="https://www.biblegateway.com/passage/?search=' + q + '&version=' + v + '" target="_blank" rel="noopener">' + (v === 'NASB1995' ? 'NASB' : v) + '</a>').join('') +
-    '</div><a class="gwcomm" href="https://www.biblegateway.com/passage/?search=' + q + '&version=NIV&interface=study" target="_blank" rel="noopener">Commentaries and study notes ↗</a></div>';
+    '</div></div>';
+}
+function gatewayCommHtml(ref){
+  const q = bgSearch(ref);
+  return '<div class="gateway"><div class="eyebrow">More commentaries on Bible Gateway</div>' +
+    '<a class="gwcomm" href="https://www.biblegateway.com/passage/?search=' + q + '&version=NIV&interface=study" target="_blank" rel="noopener">Commentaries and study notes for ' + esc(ref) + ' ↗</a>' +
+    '<p class="small">Opens this passage on Bible Gateway, where you can read its free commentaries alongside it.</p></div>';
 }
 
 /* ---------- day data ---------- */
@@ -614,7 +620,7 @@ function renderReader(){
   if (tab === 'text') {
     renderScripture(body, day, i, r, book);
   } else if (tab === 'comm') {
-    let html = '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div><div class="comm">';
+    let html = gatewayCommHtml(r.ref) + '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div><div class="comm">';
     r.comm.forEach(c => {
       if (c.missing) { html += '<h4>' + book + ' ' + c.c + '</h4><p class="note">This edition of Matthew Henry\'s commentary has no notes on this chapter.</p>'; return; }
       let inOutline = false, out = '';
