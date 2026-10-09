@@ -94,9 +94,9 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
 .trbar select{flex:1;min-width:0;max-width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:500 .88rem var(--ui)}
 .trnote{margin:0 0 10px;line-height:1.45}
 .scripture .gap{color:var(--muted);font-style:italic;font-size:.9em}
-.gateway{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;max-width:65ch}
-.gwlinks{display:flex;flex-wrap:wrap;gap:8px}
-.gwlinks a{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--accent);font:600 .85rem var(--ui);text-decoration:none}
+.gateway{margin:4px 0 18px;padding-bottom:14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px;max-width:65ch}
+.gwlinks{display:flex;flex-wrap:wrap;gap:6px}
+.gwlinks a{padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--accent);font:600 .8rem var(--ui);text-decoration:none}
 .gwcomm{color:var(--accent);font:600 .92rem var(--ui);text-decoration:none}
 .gateway .small{margin:0}
 .scripture sup{font:600 .62em var(--ui);color:var(--wine);margin-right:.25em;vertical-align:.45em}
@@ -486,10 +486,9 @@ const BG_VERSIONS = ['NIV', 'ESV', 'NKJV', 'NLT', 'CSB', 'NASB1995'];
 function bgSearch(ref){ return encodeURIComponent(ref.replace(/[–—]/g, '-')); }
 function gatewayHtml(ref){
   const q = bgSearch(ref);
-  return '<div class="gateway"><div class="eyebrow">Read this passage on Bible Gateway</div><div class="gwlinks">' +
+  return '<div class="gateway"><div class="eyebrow">Also on Bible Gateway</div><div class="gwlinks">' +
     BG_VERSIONS.map(v => '<a href="https://www.biblegateway.com/passage/?search=' + q + '&version=' + v + '" target="_blank" rel="noopener">' + (v === 'NASB1995' ? 'NASB' : v) + '</a>').join('') +
-    '</div><a class="gwcomm" href="https://www.biblegateway.com/passage/?search=' + q + '&version=NIV&interface=study" target="_blank" rel="noopener">Commentaries and study notes for ' + esc(ref) + ' ↗</a>' +
-    '<p class="small">Opens Bible Gateway. Tap Done or the back arrow to return here.</p></div>';
+    '</div><a class="gwcomm" href="https://www.biblegateway.com/passage/?search=' + q + '&version=NIV&interface=study" target="_blank" rel="noopener">Commentaries and study notes ↗</a></div>';
 }
 
 /* ---------- day data ---------- */
@@ -582,7 +581,7 @@ function renderScripture(body, day, i, r, book){
   const head = '<div class="trbar"><div class="eyebrow">' + groupOf(day, i) + '</div>' + trSelectHtml() + '</div>' +
     (t.note ? '<p class="small trnote">' + esc(t.note) + '</p>' : '');
   const finish = inner => {
-    body.innerHTML = head + '<div class="scripture">' + inner + '</div>' + gatewayHtml(r.ref);
+    body.innerHTML = head + gatewayHtml(r.ref) + '<div class="scripture">' + inner + '</div>';
     document.getElementById('trSel').onchange = e => { trId = e.target.value; LS.set('tr', trId); renderReader(); };
   };
   if (t.id === 'KJV') { finish(r.text.map(s => '<h3>' + chName(s.c) + '</h3>' + kjvHtml(s)).join('')); return; }
