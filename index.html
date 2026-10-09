@@ -291,7 +291,7 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
       <p>Once installed it opens full screen like an app. Days you have opened are kept on the phone, so you can read them without a connection.</p>
       <h2>Where your progress is kept</h2>
       <p id="storeNote" class="small">Checking…</p>
-      <p class="small">App version: 9 October 2026 (3)</p>
+      <p class="small">App version: 9 October 2026 (4)</p>
     </div>
   </section>
 </div>
@@ -483,18 +483,24 @@ function trSelectHtml(){
     '<optgroup label="' + g + '">' + TRANSLATIONS.filter(t => t.group === g).map(t =>
       '<option value="' + t.id + '"' + (t.id === trId ? ' selected' : '') + '>' + esc(t.label + ' · ' + t.name) + '</option>').join('') + '</optgroup>').join('') + '</select>';
 }
-const BG_VERSIONS = ['NIV', 'ESV', 'NKJV', 'NLT', 'CSB', 'NASB1995'];
+const BG_VERSIONS = ['NIV', 'ESV', 'NKJV', 'NLT', 'AMP', 'MSG'];
 function bgSearch(ref){ return encodeURIComponent(ref.replace(/[–—]/g, '-')); }
 function gatewayHtml(ref){
   const q = bgSearch(ref);
   return '<div class="gateway"><div class="eyebrow">Also on Bible Gateway</div><div class="gwlinks">' +
-    BG_VERSIONS.map(v => '<a href="https://www.biblegateway.com/passage/?search=' + q + '&version=' + v + '" target="_blank" rel="noopener">' + (v === 'NASB1995' ? 'NASB' : v) + '</a>').join('') +
+    BG_VERSIONS.map(v => '<a href="https://www.biblegateway.com/passage/?search=' + q + '&version=' + v + '" target="_blank" rel="noopener">' + ({AMP: 'Amplified', MSG: 'The Message'}[v] || v) + '</a>').join('') +
     '</div></div>';
 }
-function gatewayCommHtml(ref){
-  const q = bgSearch(ref);
-  return '<div class="gateway"><div class="eyebrow">More commentaries on Bible Gateway</div>' +
-    '<a class="gwcomm" href="https://www.biblegateway.com/passage/?search=' + q + '&version=NIV&interface=study" target="_blank" rel="noopener">Commentaries and study notes for ' + esc(ref) + ' ↗</a>' +
+const OSIS = ['Gen','Exod','Lev','Num','Deut','Josh','Judg','Ruth','1Sam','2Sam','1Kgs','2Kgs','1Chr','2Chr','Ezra','Neh','Esth','Job','Ps','Prov','Eccl','Song','Isa','Jer','Lam','Ezek','Dan','Hos','Joel','Amos','Obad','Jonah','Mic','Nah','Hab','Zeph','Hag','Zech','Mal','Matt','Mark','Luke','John','Acts','Rom','1Cor','2Cor','Gal','Eph','Phil','Col','1Thess','2Thess','1Tim','2Tim','Titus','Phlm','Heb','Jas','1Pet','2Pet','1John','2John','3John','Jude','Rev'];
+function gatewayCommHtml(r){
+  const ref = r.ref, q = bgSearch(ref);
+  const first = r.text[0], osis = OSIS[r.b] + '.' + first.c + '.' + first.v;
+  const rsb = 'https://www.biblegateway.com/resources/reformation-study-bible/' + osis;
+  const nt = r.b >= 39;
+  return '<div class="gateway"><div class="eyebrow">More commentaries on Bible Gateway</div><div class="gwlinks">' +
+    '<a href="' + rsb + '" target="_blank" rel="noopener">Reformation Study Bible</a>' +
+    (nt ? '<a href="https://www.biblegateway.com/resources/ivp-nt/toc/" target="_blank" rel="noopener">IVP New Testament</a>' : '') +
+    '</div><a class="gwcomm" href="https://www.biblegateway.com/passage/?search=' + q + '&version=NIV&interface=study" target="_blank" rel="noopener">All commentaries for ' + esc(ref) + ' ↗</a>' +
     '<p class="small">Opens this passage on Bible Gateway, where you can read its free commentaries alongside it.</p></div>';
 }
 
@@ -621,7 +627,7 @@ function renderReader(){
   if (tab === 'text') {
     renderScripture(body, day, i, r, book);
   } else if (tab === 'comm') {
-    let html = gatewayCommHtml(r.ref) + '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div><div class="comm">';
+    let html = gatewayCommHtml(r) + '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div><div class="comm">';
     r.comm.forEach(c => {
       if (c.missing) { html += '<h4>' + book + ' ' + c.c + '</h4><p class="note">This edition of Matthew Henry\'s commentary has no notes on this chapter.</p>'; return; }
       let inOutline = false, out = '';
