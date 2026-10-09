@@ -1,6 +1,6 @@
 // Daily Bread offline cache.
 // The app shell is refreshed from the network when online; day readings are kept once opened.
-const SHELL = 'shell-v1', DAYS = 'days-v1';
+const SHELL = 'shell-v2', DAYS = 'days-v1';
 const SHELL_FILES = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -12,7 +12,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
-  if (url.origin === location.origin && url.pathname.includes('/days/')) {
+  if (url.origin === location.origin && (url.pathname.includes('/days/') || url.pathname.includes('/text/'))) {
     // Readings never change: serve from the phone once saved.
     e.respondWith(caches.open(DAYS).then(async c => {
       const hit = await c.match(e.request);

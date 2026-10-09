@@ -3,7 +3,7 @@
 A one-year Bible reading app for your phone.
 
 - **Plan:** Robert Murray M'Cheyne's *Calendar for Daily Readings* (1842). Four chapters a day: the Old Testament once and the New Testament and Psalms twice in a year.
-- **Text:** King James Version.
+- **Translations:** King James Version plus 21 more public-domain translations, including the Berean Standard Bible, World English Bible, ASV, Young's Literal, Darby and the 1599 Geneva Bible. Links open the NIV, ESV, NKJV, NLT, CSB and NASB on Bible Gateway.
 - **Commentary:** Matthew Henry's *Concise Commentary on the Whole Bible*.
 - **Study:** five questions for each reading, a notes box and a daily prayer.
 - **Progress:** ticks, streak, calendar, *Catch me up*, *Start from a day*, and backup/restore.
@@ -24,5 +24,6 @@ Your progress, notes and prayers are stored only in your own browser. Nothing is
 ## Sources
 
 - KJV text: [thiagobodruk/bible](https://github.com/thiagobodruk/bible)
+- Other translations: [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases) (public domain and CC0 texts only); World English Bible from the CrossWire SWORD module `engWEB2015eb`
 - Matthew Henry's Concise Commentary: CrossWire SWORD module `MHCC` (public domain)
 - M'Cheyne plan: [bible-in-one-year](https://github.com/mgyarmathy/bible-in-one-year) (Unlicense), checked against the full Bible for coverage

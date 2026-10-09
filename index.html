@@ -90,6 +90,15 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
 .scripture h3{font:500 1.7rem var(--display);margin:6px 0 10px}
 .scripture h3:not(:first-child){margin-top:28px}
 .scripture p{margin:0 0 .2em}
+.trbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.trbar select{flex:1;min-width:0;max-width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:500 .88rem var(--ui)}
+.trnote{margin:0 0 10px;line-height:1.45}
+.scripture .gap{color:var(--muted);font-style:italic;font-size:.9em}
+.gateway{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;max-width:65ch}
+.gwlinks{display:flex;flex-wrap:wrap;gap:8px}
+.gwlinks a{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--accent);font:600 .85rem var(--ui);text-decoration:none}
+.gwcomm{color:var(--accent);font:600 .92rem var(--ui);text-decoration:none}
+.gateway .small{margin:0}
 .scripture sup{font:600 .62em var(--ui);color:var(--wine);margin-right:.25em;vertical-align:.45em}
 .comm{font:400 calc(var(--fs-read) - .06rem)/1.7 var(--read);max-width:65ch}
 .comm h4{font:600 .72rem var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:24px 0 6px}
@@ -275,7 +284,8 @@ textarea{width:100%;box-sizing:border-box;min-height:96px;resize:vertical;border
       <p>When you fall behind, a <strong>Catch me up</strong> button appears on Today and in the Calendar. It makes your first unfinished day today's reading and moves every later day back by the same number of days. Nothing is skipped: you still read all 365 days in order, and the plan finishes later. Your ticks and notes stay with their readings, and your streak starts again from that day.</p>
       <p id="shiftNote" class="small"></p>
       <h2>Sources</h2>
-      <p>Reading plan: Robert Murray M'Cheyne, <em>Calendar for Daily Readings</em> (1842). Scripture: King James Version. Commentary: Matthew Henry's <em>Concise Commentary on the Whole Bible</em> (public domain). This edition of the commentary has no notes on Leviticus 19 or Psalm 108.</p>
+      <p>Reading plan: Robert Murray M'Cheyne, <em>Calendar for Daily Readings</em> (1842). Commentary: Matthew Henry's <em>Concise Commentary on the Whole Bible</em> (public domain). This edition of the commentary has no notes on Leviticus 19 or Psalm 108.</p>
+      <p>Translations: the King James Version, plus 22 more public-domain translations you can switch between in a reading's Scripture tab. Partial Bibles fall back to the KJV for chapters they do not cover. The NIV, ESV, NKJV, NLT, CSB and NASB are copyrighted, so the app links to them on Bible Gateway instead.</p>
       <h2>Put it on your Home Screen</h2>
       <p><strong>iPhone:</strong> open this page in Safari, tap the Share button, then <em>Add to Home Screen</em>.<br><strong>Android:</strong> open it in Chrome, tap the ⋮ menu, then <em>Add to Home screen</em> or <em>Install app</em>.</p>
       <p>Once installed it opens full screen like an app. Days you have opened are kept on the phone, so you can read them without a connection.</p>
@@ -454,6 +464,34 @@ function catchUpBanner(){
   return el;
 }
 
+/* ---------- translations ---------- */
+const TRANSLATIONS = [{"id":"KJV","label":"KJV","name":"King James Version (1611/1769)","group":"King James family","note":""},{"id":"BSB","label":"BSB","name":"Berean Standard Bible (2022)","group":"Modern English","note":""},{"id":"WEB","label":"WEB","name":"World English Bible","group":"Modern English","note":""},{"id":"NHEB","label":"NHEB","name":"New Heart English Bible","group":"Modern English","note":""},{"id":"BBE","label":"BBE","name":"Bible in Basic English (1949/1964)","group":"Modern English","note":""},{"id":"ACV","label":"ACV","name":"A Conservative Version (2005)","group":"Modern English","note":""},{"id":"ASV","label":"ASV","name":"American Standard Version (1901)","group":"Word-for-word","note":""},{"id":"YLT","label":"YLT","name":"Young's Literal Translation (1898)","group":"Word-for-word","note":""},{"id":"Darby","label":"Darby","name":"Darby Bible (1889)","group":"Word-for-word","note":""},{"id":"Rotherham","label":"Rotherham","name":"Rotherham Emphasised Bible (1902)","group":"Word-for-word","note":""},{"id":"UKJV","label":"UKJV","name":"Updated King James Version","group":"King James family","note":""},{"id":"Webster","label":"Webster","name":"Webster's Bible (1833)","group":"King James family","note":""},{"id":"RWebster","label":"RWebster","name":"Revised Webster Version (1833)","group":"King James family","note":""},{"id":"RNKJV","label":"RNKJV","name":"Restored Name King James Version","group":"King James family","note":"Uses Hebrew names for God, such as Yahweh."},{"id":"Geneva","label":"Geneva","name":"Geneva Bible (1599)","group":"Historic","note":"Original 1599 spelling. A few chapter breaks fall one verse differently from the KJV."},{"id":"NHEB-JE","label":"NHEB-JE","name":"New Heart English Bible, Jehovah Edition","group":"Other editions","note":""},{"id":"NHEB-ME","label":"NHEB-ME","name":"New Heart English Bible, Messianic Edition","group":"Other editions","note":""},{"id":"Tyndale","label":"Tyndale","name":"Tyndale Bible (1525/1530)","group":"Partial Bibles","note":"Tyndale finished the New Testament and parts of the Old Testament only."},{"id":"Noyes","label":"Noyes","name":"Noyes Translation (1869)","group":"Partial Bibles","note":"Covers the New Testament and some Old Testament books."},{"id":"OEB","label":"OEB","name":"Open English Bible","group":"Partial Bibles","note":"A modern translation still in progress. Many Old Testament books are not done yet."},{"id":"Anderson","label":"Anderson","name":"Anderson's New Testament (1864)","group":"Partial Bibles","note":"New Testament only."},{"id":"Haweis","label":"Haweis","name":"Haweis New Testament (1795)","group":"Partial Bibles","note":"New Testament only."},{"id":"20thCNT","label":"20th C. NT","name":"Twentieth Century New Testament (1904)","group":"Partial Bibles","note":"New Testament only."}];
+const GROUP_ORDER = ['Modern English', 'Word-for-word', 'King James family', 'Historic', 'Other editions', 'Partial Bibles'];
+const trById = id => TRANSLATIONS.find(t => t.id === id) || TRANSLATIONS[0];
+let trId = trById(LS.get('tr', 'KJV')).id;
+const textCache = {};
+function loadText(id, day){
+  const key = id + '/' + day;
+  if (!textCache[key]) textCache[key] = fetch('text/' + id + '/d' + String(day).padStart(3, '0') + '.json').then(r => {
+    if (!r.ok) throw new Error('status ' + r.status); return r.json();
+  }).catch(e => { delete textCache[key]; throw e; });
+  return textCache[key];
+}
+function trSelectHtml(){
+  return '<select id="trSel" aria-label="Translation">' + GROUP_ORDER.map(g =>
+    '<optgroup label="' + g + '">' + TRANSLATIONS.filter(t => t.group === g).map(t =>
+      '<option value="' + t.id + '"' + (t.id === trId ? ' selected' : '') + '>' + esc(t.label + ' · ' + t.name) + '</option>').join('') + '</optgroup>').join('') + '</select>';
+}
+const BG_VERSIONS = ['NIV', 'ESV', 'NKJV', 'NLT', 'CSB', 'NASB1995'];
+function bgSearch(ref){ return encodeURIComponent(ref.replace(/[–—]/g, '-')); }
+function gatewayHtml(ref){
+  const q = bgSearch(ref);
+  return '<div class="gateway"><div class="eyebrow">Read this passage on Bible Gateway</div><div class="gwlinks">' +
+    BG_VERSIONS.map(v => '<a href="https://www.biblegateway.com/passage/?search=' + q + '&version=' + v + '" target="_blank" rel="noopener">' + (v === 'NASB1995' ? 'NASB' : v) + '</a>').join('') +
+    '</div><a class="gwcomm" href="https://www.biblegateway.com/passage/?search=' + q + '&version=NIV&interface=study" target="_blank" rel="noopener">Commentaries and study notes for ' + esc(ref) + ' ↗</a>' +
+    '<p class="small">Opens Bible Gateway. Tap Done or the back arrow to return here.</p></div>';
+}
+
 /* ---------- day data ---------- */
 const cache = {};
 function loadDay(day){
@@ -536,6 +574,32 @@ function openReader(day, i){
   loadDay(day).then(d => { if (rState.day === day && rState.i === i) { rState.data = d; renderReader(); } })
     .catch(() => { document.getElementById('rBody').innerHTML = '<p class="note">Could not load this reading. Check your connection and open it again.</p>'; });
 }
+function renderScripture(body, day, i, r, book){
+  const t = trById(trId);
+  const chName = c => (book === 'Psalms' ? 'Psalm' : book) + ' ' + c;
+  const kjvSeg = c => r.text.find(s => s.c === c);
+  const kjvHtml = s => s.t.map((v, k) => '<p><sup>' + (s.v + k) + '</sup>' + esc(v) + '</p>').join('');
+  const head = '<div class="trbar"><div class="eyebrow">' + groupOf(day, i) + '</div>' + trSelectHtml() + '</div>' +
+    (t.note ? '<p class="small trnote">' + esc(t.note) + '</p>' : '');
+  const finish = inner => {
+    body.innerHTML = head + '<div class="scripture">' + inner + '</div>' + gatewayHtml(r.ref);
+    document.getElementById('trSel').onchange = e => { trId = e.target.value; LS.set('tr', trId); renderReader(); };
+  };
+  if (t.id === 'KJV') { finish(r.text.map(s => '<h3>' + chName(s.c) + '</h3>' + kjvHtml(s)).join('')); return; }
+  finish('<p class="note">Loading ' + esc(t.name) + '…</p>');
+  loadText(t.id, day).then(d => {
+    if (rState.day !== day || rState.i !== i || rState.tab !== 'text' || trId !== t.id) return;
+    finish(d[i].map(([c, vs]) => {
+      if (!vs) return '<h3>' + chName(c) + '</h3><p class="note">' + esc(t.name) + ' does not include this chapter. Showing the KJV.</p>' + kjvHtml(kjvSeg(c));
+      return '<h3>' + chName(c) + '</h3>' + vs.map(([v, tx]) => tx
+        ? '<p><sup>' + v + '</sup>' + esc(tx) + '</p>'
+        : '<p class="gap"><sup>' + v + '</sup>Not in this translation\'s main text.</p>').join('');
+    }).join(''));
+  }).catch(() => {
+    if (rState.day !== day || rState.i !== i || trId !== t.id) return;
+    finish('<p class="note">Could not load ' + esc(t.name) + '. Check your connection. Showing the KJV.</p>' + r.text.map(s => '<h3>' + chName(s.c) + '</h3>' + kjvHtml(s)).join(''));
+  });
+}
 function closeReader(){ document.getElementById('reader').hidden = true; document.body.style.overflow = ''; renderAll(); }
 function renderReader(){
   const {day, i, tab, data} = rState;
@@ -549,9 +613,7 @@ function renderReader(){
   const r = data.r[i];
   const book = NAMES[r.b];
   if (tab === 'text') {
-    body.innerHTML = '<div class="eyebrow" style="margin-bottom:8px">' + groupOf(day, i) + ' · King James Version</div><div class="scripture">' +
-      r.text.map(s => '<h3>' + (book === 'Psalms' ? 'Psalm' : book) + ' ' + s.c + '</h3>' +
-        s.t.map((v, k) => '<p><sup>' + (s.v + k) + '</sup>' + esc(v) + '</p>').join('')).join('') + '</div>';
+    renderScripture(body, day, i, r, book);
   } else if (tab === 'comm') {
     let html = '<div class="eyebrow" style="margin-bottom:8px">Matthew Henry · Concise Commentary</div><div class="comm">';
     r.comm.forEach(c => {
@@ -822,7 +884,7 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then(() => {
       const t = clampDay(todayNum());
-      for (let d = Math.max(1, t - 1); d <= Math.min(TOTAL, t + 7); d++) loadDay(d).catch(() => {});
+      for (let d = Math.max(1, t - 1); d <= Math.min(TOTAL, t + 7); d++) { loadDay(d).catch(() => {}); if (trId !== 'KJV') loadText(trId, d).catch(() => {}); }
     }).catch(() => {});
   });
 }
